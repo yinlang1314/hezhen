@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '用户详情' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'users', adminName: adminName }) %>
+<div class="wrap">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+    <a class="btn btn-ghost btn-sm" href="/admin/users">‹ 返回用户列表</a>
+  </div>
+  <h1 class="page-title"><%= user.username %> 的资料</h1>
+  <div class="page-sub">ID <%= user.id %> · 注册于 <%= user.create_time || '-' %></div>
+
+  <% var isSelf = Number(adminId) === Number(user.id); %>
+  <% if (isSelf) { %>
+  <div class="alert alert-info" style="border-left:4px solid #f59e0b">
+    ⚠️ <b>你正在查看自己的账号</b>，以下是自我操作的实际后果：<br>
+    · <b>修改昵称</b>：正常生效<br>
+    · <b>把自己降级为普通用户</b>：会立即被退出后台（权限没了就进不来了）。若你是最后一个管理员，系统会直接拒绝这个操作<br>
+    · <b>重置自己的密码</b>：要求 8 位以上，成功后会被强制退出，需用新密码重新登录<br>
+    · <b>删除自己</b>：被系统禁止（避免把自己锁在门外）
+  </div>
+  <% } %>
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num"><%= histories.length %></div><div class="lab">识别记录</div></div>
+    <div class="stat-card blue"><div class="num"><%= collections.length %></div><div class="lab">收藏</div></div>
+    <div class="stat-card amber"><div class="num"><%= corrections.length %></div><div class="lab">纠错提交</div></div>
+  </div>
+
+  <div class="stat-grid">
+    <!-- 修改资料 -->
+    <div class="card" style="margin:0">
+      <div class="card-head">修改资料 / 权限</div>
+      <div class="card-body">
+        <form method="post" action="/admin/users/<%= user.id %>/edit">
+          <div style="margin-bottom:14px">
+            <label>账号（不可修改）</label>
+            <input type="text" value="<%= user.username %>" disabled />
+          </div>
+          <div style="margin-bottom:14px">
+            <label>昵称</label>
+            <input type="text" name="nickname" value="<%= user.nickname || '' %>" maxlength="20" placeholder="留空表示未设置" />
+          </div>
+          <div style="margin-bottom:18px">
+            <label>角色权限</label>
+            <select name="is_admin">
+              <option value="0" <%= user.is_admin ? '' : 'selected' %>>普通用户（仅使用 App）</option>
+              <option value="1" <%= user.is_admin ? 'selected' : '' %>>管理员（可登录此后台）</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" type="submit" onclick="return confirmRole(<%= isSelf ? 'true' : 'false' %>)">保存修改</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- 重置密码 -->
+    <div class="card" style="margin:0">
+      <div class="card-head"><%= isSelf ? '重置我自己的密码' : '重置该用户密码' %></div>
+      <div class="card-body">
+        <form method="post" action="/admin/users/<%= user.id %>/password" id="pwdForm">
+          <div style="margin-bottom:14px">
+            <label>新密码（<%= isSelf ? '至少 8 位' : '至少 6 位' %>）</label>
+            <input type="text" name="password" id="pwdInput" placeholder="输入新密码" minlength="<%= isSelf ? 8 : 6 %>" required />
+          </div>
+          <button class="btn btn-primary" type="submit" onclick="return confirmPwd(<%= isSelf ? 'true' : 'false' %>)">
+            <%= isSelf ? '重置并退出登录' : '重置密码' %>
+          </button>
+          <div style="color:#94a3b8;font-size:12px;margin-top:12px;line-height:1.7">
+            <% if (isSelf) { %>
+              ⚠️ 重置自己的密码后，<b>当前登录会立即失效</b>，你会被退出到登录页，请用新密码重新登录。<br>
+              想边登录边改密码？用右上角的「<a href="/admin/password">修改密码</a>」更合适。
+            <% } else { %>
+              密码会用 bcrypt 加密后存入数据库。<br>请把新密码告知该用户，建议其登录后自行修改。
+            <% } %>
+          </div>
+        </form>
+      </div>
+    </div>
+<script>
+function confirmPwd(isSelf) {
+  var v = document.getElementById('pwdInput').value;
+  if (isSelf) {
+    if (v.length < 8) { alert('给自己重置密码请用 8 位以上'); return false; }
+    return confirm('⚠️ 你是要重置【自己】的密码！\n\n确认后你会立即被退出登录，需要用新密码重新进入。\n\n确定继续吗？');
+  }
+  return confirm('确定把该用户的密码重置为你填写的这个吗？');
+}
+</script>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span>危险操作</span>
+    </div>
+    <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <form method="post" action="/admin/users/<%= user.id %>/clear-history" style="display:inline"
+            onsubmit="return confirm('确定清空该用户的全部识别记录吗？此操作不可恢复。')">
+        <button class="btn btn-ghost" type="submit">清空识别记录</button>
+      </form>
+      <form method="post" action="/admin/users/<%= user.id %>/delete" style="display:inline"
+            onsubmit="return confirm('确定删除用户「<%= user.username %>」吗？\\n\\n会同时删除其识别记录、收藏与纠错记录，不可恢复！')">
+        <button class="btn btn-danger" type="submit">删除该用户</button>
+      </form>
+      <span style="color:#94a3b8;font-size:12px">为保证系统可用，最后一个管理员账号与当前登录账号不可删除</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">该用户的识别记录（最近 50 条）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>病害</th><th>置信度</th><th>等级</th><th>纠正</th><th>时间</th></tr></thead>
+        <tbody>
+          <% if (!histories.length) { %><tr><td colspan="6" class="empty-row">暂无识别记录</td></tr>
+          <% } else { histories.forEach(function (h) { %>
+            <tr>
+              <td><%= h.id %></td>
+              <td><%= h.disease_name %></td>
+              <td><span class="tag tag-blue"><%= h.confidence || 0 %>%</span></td>
+              <td><%= h.level_text || '-' %></td>
+              <td><%= h.corrected === '1' ? '✅ 已纠正' : '-' %></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= h.create_time %></td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">该用户的收藏</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ID</th><th>名称</th><th>分类</th><th>收藏时间</th></tr></thead>
+        <tbody>
+          <% if (!collections.length) { %><tr><td colspan="4" class="empty-row">暂无收藏</td></tr>
+          <% } else { collections.forEach(function (c) { %>
+            <tr><td><%= c.id %></td><td><%= c.name %></td><td><%= c.type || '-' %></td><td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= c.create_time %></td></tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <% if (corrections.length) { %>
+  <div class="card">
+    <div class="card-head">该用户提交的纠错</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>记录号</th><th>AI 原判断</th><th>用户纠正为</th><th>时间</th></tr></thead>
+        <tbody>
+          <% corrections.forEach(function (c) { %>
+            <tr>
+              <td><%= c.history_id || '-' %></td>
+              <td style="color:#b45309"><%= c.ai_name || '-' %></td>
+              <td style="color:#047857;font-weight:600"><%= c.correct_name %></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= c.create_time %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% } %>
+</div>
+</body></html>

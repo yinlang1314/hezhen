@@ -1,0 +1,33 @@
+node_modules/
+unpackage/
+.hbuilderx/
+.DS_Store
+
+# 环境变量（含 API 密钥，不要提交）
+.env
+.env.local
+agriculture-backend/logs/
+
+# 数据库文件（含业务数据）
+agriculture-backend/*.db
+agriculture-backend/*.db-wal
+agriculture-backend/*.db-shm
+agriculture-backend/*.db.backup
+*.db.backup
+*.sqlite
+*.sqlite3
+
+# 用户上传图片（95 MB，不进仓库）
+agriculture-backend/public/uploads/
+
+# 签名证书（App 更新凭证，绝对不能公开）
+keystore/
+
+# 日志与临时文件
+*.log
+agriculture-backend/logs/
+
+# 系统/编辑器
+Thumbs.db
+.idea/
+.vscode/

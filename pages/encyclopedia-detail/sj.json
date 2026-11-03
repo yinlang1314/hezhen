@@ -1,0 +1,23 @@
+{
+  "pages": [
+    {"path":"pages/login/login","style":{}},
+    {"path":"pages/register/register","style":{}},
+    {"path":"pages/index/index","style":{"navigationStyle":"custom","backgroundColor":"#FFFFFF"}},
+    {"path":"pages/recognize/recognize","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/encyclopedia/encyclopedia","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/encyclopedia-detail/encyclopedia-detail","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/history/history","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/profile/profile","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/warning/warning","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/collection/collection","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/settings/settings","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/help/help","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/feedback/feedback","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}},
+    {"path":"pages/profile-edit/profile-edit","style":{"navigationStyle":"custom","backgroundColor":"#F8FAFC"}}
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle":"black",
+    "navigationBarBackgroundColor":"#FFFFFF",
+    "backgroundColor":"#F8FAFC"
+  }
+}

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: isEdit ? '编辑病虫害' : '新增病虫害' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'diseases', adminName: adminName }) %>
+<div class="wrap">
+  <a class="btn btn-ghost btn-sm" href="/admin/diseases">‹ 返回病虫害库</a>
+  <h1 class="page-title" style="margin-top:12px"><%= isEdit ? '编辑：' + d.name : '新增病虫害' %></h1>
+  <div class="page-sub">
+    必填：名称、分类、症状、病因、防治方法。
+    <% if (aiEnabled) { %>不想手打？填好<b>名称</b>后点「AI 自动生成资料」，会自动补全症状/病因/用药等字段。<% } %>
+  </div>
+
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+  <% if (!aiEnabled) { %>
+    <div class="alert alert-info">提示：未配置 DeepSeek 密钥，「AI 自动生成资料」不可用（在 agriculture-backend/.env 里配置后重启即可）</div>
+  <% } %>
+
+  <form method="post" action="<%= isEdit ? '/admin/diseases/edit' : '/admin/diseases/add' %>" enctype="multipart/form-data" id="dform">
+    <% if (isEdit) { %><input type="hidden" name="id" value="<%= d.id %>" /><% } %>
+
+    <div class="card">
+      <div class="card-head">
+        <span>基本信息</span>
+        <% if (aiEnabled) { %>
+        <button class="btn btn-primary btn-sm" type="button" id="aiBtn" onclick="aiFill()">✨ AI 自动生成资料</button>
+        <% } %>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div>
+            <label>病虫害名称 *</label>
+            <input type="text" name="name" id="f_name" value="<%= d.name || '' %>" placeholder="例如：芍药炭疽病" required />
+          </div>
+          <div>
+            <label>所属分类 *</label>
+            <input type="text" name="category" id="f_category" value="<%= d.category || '' %>" placeholder="例如：花卉病害 / 真菌性病害" required />
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>类型 / 寄主</label>
+            <input type="text" name="type" id="f_type" value="<%= d.type || '' %>" placeholder="例如：芍药病害" />
+          </div>
+          <div>
+            <label>危害等级</label>
+            <select name="level" id="f_level">
+              <option value="1" <%= d.level === 1 ? 'selected' : '' %>>轻度危害</option>
+              <option value="2" <%= !d.level || d.level === 2 ? 'selected' : '' %>>中度危害</option>
+              <option value="3" <%= d.level === 3 ? 'selected' : '' %>>重度危害</option>
+            </select>
+          </div>
+          <div>
+            <label>寄主植物</label>
+            <input type="text" name="host" id="f_host" value="<%= d.host || '' %>" placeholder="例如：芍药、牡丹" />
+          </div>
+        </div>
+        <div>
+          <label>病虫害图片</label>
+          <% if (isEdit && d.image) { %>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+              <img src="<%= String(d.image).replace(/^https?:\/\/[^/]+/, '') %>" style="width:90px;height:90px;object-fit:cover;border-radius:10px" alt="">
+              <span style="color:#94a3b8;font-size:12.5px">当前图片（重新选择会替换）</span>
+            </div>
+          <% } %>
+          <input type="file" name="disease_image" accept="image/*" />
+        </div>
+        <div class="form-row" style="margin-top:12px">
+          <div>
+            <label>数据来源（核对依据）</label>
+            <input type="text" name="verify_source" value="<%= d.verify_source || '' %>"
+                   placeholder="例如：中国农作物病虫害（第3版）P.412 / 中国农药信息网 PD20201234" />
+            <div style="font-size:12px;color:#94a3b8;margin-top:4px">用药信息必须核对农药登记证，填了来源才算"有据可查"</div>
+          </div>
+          <div>
+            <label>核对日期</label>
+            <input type="date" name="verify_date" value="<%= d.verify_date || '' %>" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">症状与防治（一行一条，会自动转成列表展示在 App 里）</div>
+      <div class="card-body">
+        <div style="margin-bottom:16px">
+          <label>危害症状 *</label>
+          <textarea name="symptom" id="f_symptom" required placeholder="描述病斑形态、颜色、部位等"><%= d.symptom || '' %></textarea>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>病因 *</label>
+            <textarea name="cause" id="f_cause" required placeholder="例如：由炭疽菌感染引起"><%= d.cause || '' %></textarea>
+          </div>
+          <div>
+            <label>传播途径</label>
+            <textarea name="spread" id="f_spread" placeholder="例如：风雨、气流及浇水飞溅传播"><%= d.spread || '' %></textarea>
+          </div>
+        </div>
+        <div>
+          <label>发病规律</label>
+          <textarea name="occurrence" id="f_occurrence" placeholder="例如：6-9月高温高湿季节为发病盛期"><%= d.occurrence || '' %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">用药与建议（一行一条）</div>
+      <div class="card-body">
+        <div class="form-row">
+          <div>
+            <label>推荐用药（一行一种，格式：药名|用法用量）</label>
+            <textarea name="medicines" id="f_medicines" placeholder="咪鲜胺|25%乳油1000～1500倍液喷雾&#10;苯醚甲环唑|10%水分散粒剂1500倍液"><%= medicinesText %></textarea>
+          </div>
+          <div>
+            <label>防治建议（一行一条）</label>
+            <textarea name="suggestions" id="f_suggestions" placeholder="及时摘除病叶并集中销毁&#10;发病初期开始喷药"><%= suggestionsText %></textarea>
+          </div>
+        </div>
+        <div>
+          <label>预防措施（一行一条）*</label>
+          <textarea name="prevention" id="f_prevention" required placeholder="选用无病种苗&#10;合理密植，改善通风透光"><%= preventionText %></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:12px;margin-bottom:40px">
+      <button class="btn btn-primary" type="submit" style="padding:11px 28px"><%= isEdit ? '保存修改' : '确认新增' %></button>
+      <a class="btn btn-ghost" href="/admin/diseases" style="padding:11px 24px">取消</a>
+    </div>
+  </form>
+</div>
+
+<script>
+// AI 自动生成资料：把名称发给后端，让 DeepSeek 补全各字段
+async function aiFill() {
+  var name = document.getElementById('f_name').value.trim();
+  if (!name) { alert('请先填写病虫害名称，例如：芍药炭疽病'); return; }
+  var btn = document.getElementById('aiBtn');
+  btn.disabled = true;
+  var old = btn.textContent;
+  btn.textContent = '生成中，请稍候...';
+  try {
+    var res = await fetch('/admin/diseases/ai-fill?name=' + encodeURIComponent(name));
+    var j = await res.json();
+    if (j.code !== 200) { alert(j.message || '生成失败'); return; }
+    var d = j.data;
+    var set = function (id, v) { if (v && !document.getElementById(id).value.trim()) document.getElementById(id).value = v; else if (v) document.getElementById(id).value = v; };
+    set('f_symptom', d.symptom);
+    set('f_cause', d.cause);
+    set('f_spread', d.spread);
+    set('f_occurrence', d.occurrence);
+    set('f_category', d.category);
+    set('f_type', d.type);
+    if (d.level) document.getElementById('f_level').value = String(d.level);
+    if (d.medicines && d.medicines.length) {
+      document.getElementById('f_medicines').value = d.medicines.map(function (m) { return (m.name || '') + '|' + (m.usage || ''); }).join('\n');
+    }
+    if (d.suggestions && d.suggestions.length) document.getElementById('f_suggestions').value = d.suggestions.join('\n');
+    if (d.prevention && d.prevention.length) document.getElementById('f_prevention').value = d.prevention.join('\n');
+    alert('已自动填充，请核对后保存');
+  } catch (e) {
+    alert('请求失败：' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = old;
+  }
+}
+</script>
+</body></html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '数据概览' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'dashboard', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">数据概览</h1>
+  <div class="page-sub">系统整体运行情况与最新动态</div>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num"><%= stats.userCount %></div><div class="lab">注册用户</div></div>
+    <div class="stat-card blue"><div class="num"><%= stats.diseaseCount %></div><div class="lab">病虫害数据</div></div>
+    <div class="stat-card amber"><div class="num"><%= stats.historyCount %></div><div class="lab">识别总次数</div></div>
+    <div class="stat-card violet"><div class="num"><%= stats.collectionCount %></div><div class="lab">收藏总数</div></div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card" style="margin:0">
+      <div class="card-head">最近 7 天识别趋势</div>
+      <div class="card-body">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;height:130px;gap:8px">
+          <% trend.forEach(function (d) { %>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:4px"><%= d.count %></div>
+            <div style="width:100%;max-width:42px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#6ee7b7,#10b981);height:<%= Math.max(4, Math.round(d.count / maxTrend * 88)) %>%"></div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:6px"><%= d.day %></div>
+          </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-head">识别最多的病害 TOP 8</div>
+      <div class="card-body" style="padding-top:8px">
+        <% if (!hot.length) { %>
+          <div style="color:#94a3b8;text-align:center;padding:30px 0">暂无识别数据</div>
+        <% } else { hot.forEach(function (h, i) { %>
+          <div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f5f9">
+            <span style="width:22px;height:22px;border-radius:6px;background:<%= i < 3 ? '#d1fae5' : '#f1f5f9' %>;color:<%= i < 3 ? '#065f46' : '#64748b' %>;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center"><%= i + 1 %></span>
+            <span style="flex:1;font-size:13.5px"><%= h.name %></span>
+            <span class="tag tag-green"><%= h.count %> 次</span>
+          </div>
+        <% }) } %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span>最新识别记录</span>
+      <a class="btn btn-ghost btn-sm" href="/admin/histories">查看全部 →</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>图片</th><th>用户</th><th>识别结果</th><th>置信度</th><th>时间</th></tr></thead>
+        <tbody>
+          <% if (!recent.length) { %>
+            <tr><td colspan="5" class="empty-row">暂无识别记录</td></tr>
+          <% } else { recent.forEach(function (r) { %>
+            <tr>
+              <td><% if (r.image_url) { %><img class="thumb" src="<%= String(r.image_url).replace(/^https?:\/\/[^/]+/, '') %>" alt=""><% } else { %><div class="thumb"></div><% } %></td>
+              <td><%= r.username || '未登录' %></td>
+              <td><%= r.disease_name || '-' %></td>
+              <td><span class="tag tag-blue"><%= r.confidence || 0 %>%</span></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time || '-' %></td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="card" style="margin:0">
+      <div class="card-head">系统状态</div>
+      <div class="card-body">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9"><span>数据库</span><span class="tag <%= health.database === '正常' ? 'tag-green' : 'tag-red' %>"><%= health.database %></span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9"><span>DeepSeek 密钥</span><span class="tag <%= health.ai.deepseek ? 'tag-green' : 'tag-amber' %>"><%= health.ai.deepseek ? '已配置' : '未配置' %></span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9"><span>百度植物识别密钥</span><span class="tag <%= health.ai.baidu ? 'tag-green' : 'tag-amber' %>"><%= health.ai.baidu ? '已配置' : '未配置' %></span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9"><span>运行端口</span><span class="tag tag-grey"><%= health.port %></span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span>Node 版本</span><span class="tag tag-grey"><%= health.nodeVersion %></span></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin:0">
+      <div class="card-head">
+        <span>最新注册用户</span>
+        <a class="btn btn-ghost btn-sm" href="/admin/users">用户管理 →</a>
+      </div>
+      <div class="card-body" style="padding-top:8px">
+        <% if (!newestUsers.length) { %>
+          <div style="color:#94a3b8;text-align:center;padding:30px 0">暂无用户</div>
+        <% } else { newestUsers.forEach(function (u) { %>
+          <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9">
+            <span style="width:32px;height:32px;border-radius:50%;background:#d1fae5;display:flex;align-items:center;justify-content:center">🧑‍🌾</span>
+            <a href="/admin/users/<%= u.id %>" style="flex:1;font-weight:600"><%= u.username %></a>
+            <% if (u.is_admin) { %><span class="tag tag-amber">管理员</span><% } %>
+            <span style="color:#94a3b8;font-size:12px"><%= (u.create_time || '').slice(0, 10) %></span>
+          </div>
+        <% }) } %>
+      </div>
+    </div>
+  </div>
+</div>
+</body></html>

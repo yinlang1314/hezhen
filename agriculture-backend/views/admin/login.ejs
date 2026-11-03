@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '管理员登录' }) %>
+</head><body>
+<div class="login-page">
+  <div class="login-box">
+    <div class="logo">🌿</div>
+    <h1>禾诊 · 管理后台</h1>
+    <div class="sub">请使用管理员账号登录</div>
+    <% if (typeof errorMessage !== 'undefined' && errorMessage) { %><div class="alert alert-error"><%= errorMessage %></div><% } %>
+    <% if (typeof notice !== 'undefined' && notice) { %><div class="alert alert-ok">✅ <%= notice %></div><% } %>
+    <form method="post" action="/admin/login">
+      <div class="field">
+        <label>管理员账号</label>
+        <input type="text" name="username" placeholder="请输入账号" autocomplete="username" required />
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input type="password" name="password" placeholder="请输入密码" autocomplete="current-password" required />
+      </div>
+      <button type="submit">登 录</button>
+    </form>
+    <div class="hint">只有被标记为管理员的账号才能登录<br>
+      <span style="color:#b45309">⚠️ 首次部署请立即修改默认密码，并删除本页提示</span></div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,121 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录"
+      }
+    },
+    {
+      "path": "pages/register/register",
+      "style": {
+        "navigationBarTitleText": "注册"
+      }
+    },
+    {
+      "path": "pages/recognize/recognize",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    // #ifdef H5
+    {
+      "path": "pages/realtime/realtime",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#0B1220"
+      }
+    },
+    // #endif
+    {
+      "path": "pages/encyclopedia/encyclopedia",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/encyclopedia-detail/encyclopedia-detail",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/history/history",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/profile/profile",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/warning/warning",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/collection/collection",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/settings/settings",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/help/help",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/feedback/feedback",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/chat/chat",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/profile-edit/profile-edit",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F8FAFC"
+  }
+}

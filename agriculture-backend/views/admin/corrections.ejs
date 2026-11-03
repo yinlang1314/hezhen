@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '用户纠错' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'corrections', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">用户纠错记录</h1>
+  <div class="page-sub">用户在 App 里指出 AI 判断错误时记录在此：<b>AI 原判断</b> vs <b>用户给出的正确答案</b>。正确答案会自动收录进知识库</div>
+
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <div class="alert alert-info">
+    💡 如果某个病害被反复纠正，说明 AI 或知识库有问题，建议到
+    <a href="/admin/diseases">病虫害库</a> 核对它的症状描述与用药方案。
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>记录号</th><th>用户</th><th>AI 原判断</th><th>用户纠正为</th><th>寄主</th><th>时间</th><th style="text-align:right">操作</th></tr>
+        </thead>
+        <tbody>
+          <% if (!rows.length) { %>
+            <tr><td colspan="7" class="empty-row">暂无纠错记录</td></tr>
+          <% } else { rows.forEach(function (r) { %>
+            <tr>
+              <td><%= r.history_id || '-' %></td>
+              <td><%= r.username || '未登录' %></td>
+              <td style="color:#b45309"><%= r.ai_name || '-' %></td>
+              <td style="color:#047857;font-weight:700"><%= r.correct_name %></td>
+              <td><%= r.plant_name || '-' %></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time %></td>
+              <td style="text-align:right">
+                <form method="post" action="/admin/corrections/<%= r.id %>/delete" style="display:inline"
+                      onsubmit="return confirm('删除这条纠错记录？')">
+                  <button class="btn btn-danger btn-sm" type="submit">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</body></html>

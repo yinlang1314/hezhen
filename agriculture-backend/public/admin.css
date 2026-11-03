@@ -1,0 +1,317 @@
+/* ==================================================================
+   管理后台样式（本地文件，不依赖外网 CDN，断网也能正常显示）
+   ================================================================== */
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: #f4f8f6; color: #1e293b;
+  font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
+  font-size: 14px; -webkit-font-smoothing: antialiased;
+}
+a { color: #059669; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* 顶栏 */
+.topbar {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff; padding: 0 24px; height: 60px;
+  display: flex; align-items: center; gap: 26px;
+  box-shadow: 0 2px 12px rgba(5,150,105,.25);
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar .brand { font-weight: 800; font-size: 16px; letter-spacing: .5px; margin-right: 6px; white-space: nowrap; }
+.topbar nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+.topbar nav a {
+  color: rgba(255,255,255,.85); padding: 8px 14px; border-radius: 8px;
+  font-size: 13.5px; text-decoration: none; transition: all .15s;
+}
+.topbar nav a:hover { background: rgba(255,255,255,.15); color: #fff; text-decoration: none; }
+.topbar nav a.on { background: rgba(255,255,255,.22); color: #fff; font-weight: 700; }
+.topbar .logout { color: #fff; border: 1px solid rgba(255,255,255,.6); padding: 7px 16px; border-radius: 8px; font-size: 13px; text-decoration: none; white-space: nowrap; }
+.topbar .logout:hover { background: #fff; color: #059669; text-decoration: none; }
+
+.wrap { padding: 24px; max-width: 1400px; margin: 0 auto; }
+.page-title { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+.page-sub { color: #64748b; font-size: 13px; margin-bottom: 20px; }
+
+/* 统计卡 */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 22px; }
+.stat-card {
+  background: #fff; border-radius: 14px; padding: 22px;
+  box-shadow: 0 4px 18px rgba(15,23,42,.06);
+  border-left: 5px solid #10b981;
+}
+.stat-card.blue { border-left-color: #3b82f6; }
+.stat-card.amber { border-left-color: #f59e0b; }
+.stat-card.violet { border-left-color: #8b5cf6; }
+.stat-card .num { font-size: 34px; font-weight: 800; color: #0f172a; line-height: 1.1; }
+.stat-card .lab { font-size: 13px; color: #64748b; margin-top: 6px; }
+
+/* 卡片 */
+.card { background: #fff; border-radius: 14px; box-shadow: 0 4px 18px rgba(15,23,42,.06); overflow: hidden; margin-bottom: 20px; }
+.card-head { padding: 16px 20px; border-bottom: 1px solid #eef2f7; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.card-body { padding: 18px 20px; }
+
+/* 表格 */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid #eef2f7; vertical-align: middle; }
+th { color: #64748b; font-weight: 600; background: #f8fafc; white-space: nowrap; font-size: 12.5px; }
+tbody tr:hover { background: #fafcfb; }
+td.nowrap { white-space: nowrap; }
+.empty-row { text-align: center; color: #94a3b8; padding: 40px 0 !important; }
+
+/* 标签 */
+.tag { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.tag-green { background: #d1fae5; color: #065f46; }
+.tag-amber { background: #fef3c7; color: #b45309; }
+.tag-red { background: #fee2e2; color: #b91c1c; }
+.tag-blue { background: #dbeafe; color: #1d4ed8; }
+.tag-grey { background: #f1f5f9; color: #64748b; }
+
+/* 按钮 */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  border: none; cursor: pointer; text-decoration: none; transition: all .15s;
+  background: #f1f5f9; color: #334155;
+}
+.btn:hover { filter: brightness(.96); text-decoration: none; }
+.btn-primary { background: #10b981; color: #fff; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-ghost { background: #fff; border: 1px solid #e2e8f0; color: #334155; }
+.btn-sm { padding: 5px 10px; font-size: 12px; }
+
+/* 表单 */
+input[type=text], input[type=password], input[type=number], select, textarea {
+  width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+  font-size: 13.5px; font-family: inherit; background: #f8fafc; color: #1e293b;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #6ee7b7; background: #fff; }
+textarea { min-height: 80px; resize: vertical; }
+label { display: block; font-size: 12.5px; color: #64748b; margin-bottom: 6px; font-weight: 600; }
+.form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px; }
+
+/* 提示条 */
+.alert { padding: 12px 16px; border-radius: 10px; font-size: 13.5px; margin-bottom: 16px; }
+.alert-error { background: #fee2e2; color: #b91c1c; }
+.alert-ok { background: #d1fae5; color: #065f46; }
+.alert-info { background: #dbeafe; color: #1d4ed8; }
+
+/* 搜索栏 */
+.toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; }
+.toolbar input, .toolbar select { width: auto; min-width: 180px; }
+
+/* 图片缩略 */
+.thumb { width: 46px; height: 46px; border-radius: 8px; object-fit: cover; background: #f1f5f9; display: block; }
+
+/* 弹窗（用原生 form 提交，不依赖 JS 框架） */
+.modal-mask { position: fixed; inset: 0; background: rgba(15,23,42,.5); display: flex; align-items: center; justify-content: center; z-index: 100; }
+.modal { background: #fff; border-radius: 16px; padding: 24px; width: 92%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.modal h3 { margin: 0 0 6px; font-size: 17px; }
+.modal p { color: #64748b; font-size: 13px; margin: 0 0 18px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* 分页 */
+.pager { display: flex; gap: 6px; align-items: center; justify-content: center; padding: 16px; flex-wrap: wrap; }
+.pager a, .pager span { padding: 6px 12px; border-radius: 8px; font-size: 13px; background: #f1f5f9; color: #334155; text-decoration: none; }
+.pager a:hover { background: #e2e8f0; text-decoration: none; }
+.pager .cur { background: #10b981; color: #fff; font-weight: 700; }
+
+/* 登录页 */
+.login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(160deg, #ecfdf5, #f0fdf4 45%, #fff); padding: 24px; }
+.login-box { width: 100%; max-width: 380px; background: #fff; border-radius: 20px; padding: 40px 34px; box-shadow: 0 18px 50px rgba(15,23,42,.12); }
+.login-box .logo { width: 62px; height: 62px; border-radius: 18px; background: linear-gradient(135deg,#34d399,#059669); display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 20px; box-shadow: 0 10px 26px rgba(5,150,105,.3); }
+.login-box h1 { font-size: 21px; text-align: center; margin: 0 0 4px; color: #0f172a; }
+.login-box .sub { text-align: center; color: #94a3b8; font-size: 13px; margin-bottom: 26px; }
+.login-box .field { margin-bottom: 16px; }
+.login-box button { width: 100%; padding: 12px; border: none; border-radius: 10px; background: linear-gradient(135deg,#34d399,#059669); color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px; box-shadow: 0 8px 20px rgba(5,150,105,.25); }
+.login-box button:hover { filter: brightness(1.05); }
+.login-box .hint { text-align: center; color: #94a3b8; font-size: 12px; margin-top: 18px; line-height: 1.7; }
+
+
+/* ==================================================================
+   手机 / 平板适配（追加，只作用于窄屏，不影响电脑上的显示）
+   窄屏分界：768px（手机竖屏、大屏手机）
+   超窄屏：420px（小屏手机）
+   ================================================================== */
+
+/* 让表格容器在触屏上能顺滑横滑，并给一个"可以左右滑"的提示 */
+.table-wrap {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+/* 触屏设备上按钮大一点，避免点不准 */
+@media (hover: none) {
+  .btn { min-height: 40px; }
+  .btn-sm { min-height: 34px; }
+  .topbar nav a { padding: 10px 14px; }
+}
+
+/* ---------- 平板 / 手机（≤ 768px） ---------- */
+@media (max-width: 768px) {
+  /* 顶栏：改成两行，品牌和退出按钮在第一行，导航在第二行横向滑动 */
+  .topbar {
+    height: auto;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
+  }
+  .topbar .brand { font-size: 15px; margin-right: auto; }
+  .topbar .logout { padding: 7px 12px; font-size: 12.5px; }
+  .topbar .btn-sm { padding: 6px 10px; font-size: 12px; min-height: 32px; }
+  .topbar nav {
+    order: 3;
+    width: 100%;
+    flex: 0 0 100%;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    gap: 2px;
+    scrollbar-width: none;          /* 隐藏滚动条，看起来更干净 */
+  }
+  .topbar nav::-webkit-scrollbar { display: none; }
+  .topbar nav a { white-space: nowrap; padding: 9px 12px; font-size: 13px; }
+
+  /* 内容区：手机屏幕窄，留白收窄 */
+  .wrap { padding: 14px; }
+  .page-title { font-size: 19px; }
+  .page-sub { font-size: 12.5px; margin-bottom: 14px; }
+
+  /* 卡片 */
+  .card { border-radius: 12px; margin-bottom: 14px; }
+  .card-head { padding: 13px 14px; font-size: 14.5px; }
+  .card-body { padding: 14px; }
+
+  /* 统计卡：手机上两列排（原来最小 200px 一列在手机上太占地方） */
+  .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-card { padding: 14px; border-radius: 12px; border-left-width: 4px; }
+  .stat-card .num { font-size: 25px; }
+  .stat-card .lab { font-size: 12px; margin-top: 4px; }
+
+  /* 表格：字号和内边距收紧，一屏能多看几列 */
+  table { font-size: 12.5px; }
+  th, td { padding: 9px 10px; }
+  th { font-size: 11.5px; }
+  .thumb { width: 40px; height: 40px; }
+
+  /* 表单 */
+  .form-row { grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+  input[type=text], input[type=password], input[type=number], select, textarea { font-size: 16px; padding: 10px 12px; }
+  /* ↑ 手机上字号必须 ≥16px，否则 iOS Safari 点输入框会自动放大页面 */
+
+  /* 搜索栏：输入框占满整行 */
+  .toolbar { gap: 8px; }
+  .toolbar input, .toolbar select { min-width: 0; width: 100%; }
+  .toolbar .btn { width: 100%; justify-content: center; }
+
+  /* 分页 */
+  .pager { padding: 12px; gap: 5px; }
+  .pager a, .pager span { padding: 7px 11px; font-size: 12.5px; }
+
+  /* 弹窗 */
+  .modal { padding: 18px; border-radius: 14px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+
+  /* 登录页 */
+  .login-page { padding: 16px; }
+  .login-box { padding: 28px 20px; border-radius: 16px; }
+  .login-box h1 { font-size: 19px; }
+}
+
+/* ---------- 小屏手机（≤ 420px） ---------- */
+@media (max-width: 420px) {
+  .wrap { padding: 10px; }
+  .stat-grid { gap: 8px; }
+  .stat-card { padding: 12px; }
+  .stat-card .num { font-size: 22px; }
+  .card-head { padding: 11px 12px; font-size: 14px; }
+  .card-body { padding: 12px; }
+  table { font-size: 12px; }
+  th, td { padding: 8px 9px; }
+  .topbar { padding: 9px 10px; }
+  .topbar .brand { font-size: 14px; }
+  .btn { padding: 7px 11px; font-size: 12.5px; }
+}
+
+/* ---------- 横屏手机 ---------- */
+@media (max-width: 900px) and (orientation: landscape) {
+  .wrap { padding: 12px 16px; }
+  .stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+
+/* ==================================================================
+   表格可读性修复（手机上最关键的一条）
+   问题：表格列多，被压缩后每个字占一行（竖排），完全没法看
+   修法：给数据行一个最小高度/宽度，让它横向滚动而不是被压扁
+   ================================================================== */
+
+/* 滚动提示：右侧渐隐，暗示"还能往右滑"（只在有内容溢出时明显） */
+.table-wrap { position: relative; }
+
+@supports selector(:has(*)) {
+  /* :has() 支持时，只给"真正有数据"的行加约束，空数据行不受影响 */
+  @media (max-width: 768px) {
+    /* 关键：不让单元格被压到竖排文字 */
+    table tbody tr:not(:has(td.empty-row)) th,
+    table tbody tr:not(:has(td.empty-row)) td {
+      white-space: nowrap;          /* 不换行 */
+      min-width: 68px;              /* 每格至少这么宽，整表就会溢出并可横滑 */
+    }
+    /* 第一列（图片/ID）窄一点 */
+    table tbody tr:not(:has(td.empty-row)) td:first-child { min-width: 56px; }
+
+    /* 症状/描述这类长文本列：给个上限，避免一行超长 */
+    table tbody tr:not(:has(td.empty-row)) td {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* 但含图片的格子不能裁 */
+    table tbody tr:not(:has(td.empty-row)) td img { max-width: 100%; }
+
+    /* 空数据行保持居中、不参与横滑 */
+    td.empty-row { white-space: normal; min-width: 0; }
+  }
+}
+
+/* 浏览器不支持 :has() 时的兜底（老版本 Safari/旧内核） */
+@supports not selector(:has(*)) {
+  @media (max-width: 768px) {
+    table { min-width: 560px; }
+  }
+}
+
+/* 表格外层加一点视觉提示：能横向滚动 */
+@media (max-width: 768px) {
+  .table-wrap { border-radius: 10px; }
+  .table-wrap::after {
+    content: "← 左右滑动查看全部列 →";
+    display: block;
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    padding: 6px 0 2px;
+    letter-spacing: .5px;
+  }
+  /* 表头吸顶，横滑时知道自己在看哪一列 */
+  table thead th { position: sticky; top: 0; z-index: 2; }
+}
+
+/* 列表里「无配图」的提示块：点击可进编辑页上传 */
+.thumb-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F1F5F9;
+  border: 1px dashed #CBD5E1;
+  color: #94A3B8;
+  font-size: 12px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.thumb-empty:hover { background: #E2E8F0; color: #475569; border-color: #94A3B8; }

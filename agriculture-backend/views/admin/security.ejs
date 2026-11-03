@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '安全与日志' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'security', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">安全与登录日志</h1>
+  <div class="page-sub">记录每一次登录尝试。如果有人反复尝试猜密码，这里会看得很清楚</div>
+
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <div class="stat-grid">
+    <div class="stat-card"><div class="num"><%= summary.total %></div><div class="lab">登录尝试总数</div></div>
+    <div class="stat-card amber"><div class="num"><%= summary.failed %></div><div class="lab">失败次数</div></div>
+    <div class="stat-card <%= summary.todayFailed > 10 ? '' : 'blue' %>"><div class="num"><%= summary.todayFailed %></div><div class="lab">最近 24 小时失败</div></div>
+  </div>
+
+  <% if (summary.todayFailed > 10) { %>
+  <div class="alert alert-error">⚠️ 最近 24 小时有 <b><%= summary.todayFailed %></b> 次登录失败，可能存在密码猜测行为。建议：① 立即修改管理员密码 ② 查看下方“失败次数排行”确认来源 IP</div>
+  <% } %>
+
+  <div class="card">
+    <div class="card-head">失败次数排行（按账号 + 来源 IP 聚合）</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>尝试的账号</th><th>来源 IP</th><th>失败次数</th><th>最近一次</th></tr></thead>
+        <tbody>
+          <% if (!failStats.length) { %>
+            <tr><td colspan="4" class="empty-row">暂无失败记录</td></tr>
+          <% } else { failStats.forEach(function (f) { %>
+            <tr>
+              <td style="font-weight:600"><%= f.username || '-' %></td>
+              <td><code><%= f.ip || '-' %></code></td>
+              <td><span class="tag <%= f.fails >= 5 ? 'tag-red' : 'tag-amber' %>"><%= f.fails %> 次</span></td>
+              <td style="color:#94a3b8;font-size:12.5px"><%= f.last_time %></td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span>最近 200 条登录记录</span>
+      <a class="btn btn-ghost btn-sm" href="/admin/security">刷新</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>时间</th><th>账号</th><th>来源 IP</th><th>结果</th><th>说明</th><th>入口</th></tr></thead>
+        <tbody>
+          <% if (!logs.length) { %>
+            <tr><td colspan="6" class="empty-row">暂无登录记录</td></tr>
+          <% } else { logs.forEach(function (l) { %>
+            <tr>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= l.create_time %></td>
+              <td style="font-weight:600"><%= l.username || '-' %></td>
+              <td><code><%= l.ip || '-' %></code></td>
+              <td><span class="tag <%= l.success ? 'tag-green' : 'tag-red' %>"><%= l.success ? '成功' : '失败' %></span></td>
+              <td style="color:#64748b;font-size:12.5px"><%= l.reason || '-' %></td>
+              <td><span class="tag tag-grey"><%= l.source === 'admin' ? '后台' : 'App' %></span></td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="alert alert-info">
+    🛡️ <b>系统已启用的登录防护</b><br>
+    · 同一账号连续失败 <b>5 次</b> → 临时锁定（1 分钟起，逐次递增到 60 分钟）<br>
+    · 同一 IP 连续失败 <b>20 次</b> → 锁定 15 分钟<br>
+    · 登录接口另有频率限制（每分钟最多 12 次尝试）<br>
+    · 每次失败与成功都写入本页日志，保留 30 天
+  </div>
+</div>
+</body></html>

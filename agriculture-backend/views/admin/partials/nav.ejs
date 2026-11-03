@@ -1,0 +1,14 @@
+<div class="topbar">
+  <span class="brand">🌿 禾诊 · 管理后台</span>
+  <nav>
+    <a href="/admin" class="<%= current === 'dashboard' ? 'on' : '' %>">数据概览</a>
+    <a href="/admin/users" class="<%= current === 'users' ? 'on' : '' %>">用户管理</a>
+    <a href="/admin/histories" class="<%= current === 'histories' ? 'on' : '' %>">识别历史</a>
+    <a href="/admin/diseases" class="<%= current === 'diseases' ? 'on' : '' %>">病虫害库</a>
+    <a href="/admin/corrections" class="<%= current === 'corrections' ? 'on' : '' %>">用户纠错</a>
+    <a href="/admin/feedback" class="<%= current === 'feedback' ? 'on' : '' %>">意见反馈</a>
+    <a href="/admin/security" class="<%= current === 'security' ? 'on' : '' %>">安全日志</a>
+  </nav>
+  <a class="btn btn-ghost btn-sm" href="/admin/password" style="margin-right:8px;background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.5)">修改密码</a>
+  <a class="logout" href="/admin/logout">退出（<%= adminName || 'admin' %>）</a>
+</div>

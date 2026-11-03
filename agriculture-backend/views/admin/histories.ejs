@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '识别历史' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'histories', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">识别历史</h1>
+  <div class="page-sub">共 <%= total %> 条记录。可勾选批量删除，也可导出 CSV 用于统计或写报告</div>
+
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <form class="toolbar" method="get" action="/admin/histories">
+    <input type="text" name="q" value="<%= keyword %>" placeholder="搜索病害名或用户名..." />
+    <label style="display:flex;align-items:center;gap:6px;margin:0;cursor:pointer">
+      <input type="checkbox" name="corrected" value="1" <%= onlyCorrected ? 'checked' : '' %> style="width:auto" />
+      <span style="font-weight:400;color:#334155">只看用户已纠正的</span>
+    </label>
+    <button class="btn btn-primary" type="submit">筛选</button>
+    <% if (keyword || onlyCorrected) { %><a class="btn btn-ghost" href="/admin/histories">重置</a><% } %>
+    <a class="btn btn-ghost" href="/admin/histories/export.csv" style="margin-left:auto">⬇ 导出 CSV</a>
+  </form>
+
+  <form method="post" action="/admin/histories/batch-delete" id="batchForm">
+  <div class="card">
+    <div class="card-head">
+      <span>记录列表</span>
+      <span>
+        <button class="btn btn-danger btn-sm" type="submit"
+                onclick="return confirm('确定删除选中的识别记录吗？对应的图片文件也会一并删除。')">批量删除选中</button>
+      </span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:36px"><input type="checkbox" onclick="var c=document.querySelectorAll('.rowck');for(var i=0;i<c.length;i++)c[i].checked=this.checked" style="width:auto"></th>
+            <th style="width:60px">图片</th>
+            <th>用户</th>
+            <th>识别结果</th>
+            <th>寄主</th>
+            <th>置信度</th>
+            <th>等级</th>
+            <th>来源</th>
+            <th>时间</th>
+            <th style="text-align:right">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!rows.length) { %>
+            <tr><td colspan="10" class="empty-row">暂无识别记录</td></tr>
+          <% } else { rows.forEach(function (r) { %>
+            <tr>
+              <td><input class="rowck" type="checkbox" name="ids" value="<%= r.id %>" style="width:auto"></td>
+              <td>
+                <% if (r.image_url) { %>
+                  <a href="<%= String(r.image_url).replace(/^https?:\/\/[^/]+/, '') %>" target="_blank">
+                    <img class="thumb" src="<%= String(r.image_url).replace(/^https?:\/\/[^/]+/, '') %>" alt="">
+                  </a>
+                <% } else { %><div class="thumb"></div><% } %>
+              </td>
+              <td>
+                <% if (r.user_id) { %><a href="/admin/users/<%= r.user_id %>"><%= r.username || ('用户' + r.user_id) %></a>
+                <% } else { %><span style="color:#94a3b8">未登录</span><% } %>
+              </td>
+              <td style="font-weight:600"><%= r.disease_name || '-' %>
+                <% if (r.corrected === '1') { %><span class="tag tag-green" style="margin-left:4px">人工纠正</span><% } %>
+              </td>
+              <td><%= r.plant_name || '-' %></td>
+              <td><span class="tag tag-blue"><%= r.confidence || 0 %>%</span></td>
+              <td><%= r.level_text || '-' %></td>
+              <td style="font-size:12px;color:#64748b"><%= r.ai_source || '-' %></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time || '-' %></td>
+              <td class="nowrap" style="text-align:right">
+                <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/histories/<%= r.id %>/delete"
+                        onclick="return confirm('确定删除这条记录吗？')">删除</button>
+              </td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <div class="pager">
+      <% if (page > 1) { %><a href="/admin/histories?page=<%= page - 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= onlyCorrected ? '&corrected=1' : '' %>">‹ 上一页</a><% } %>
+      <span class="cur"><%= page %> / <%= totalPages %></span>
+      <% if (page < totalPages) { %><a href="/admin/histories?page=<%= page + 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= onlyCorrected ? '&corrected=1' : '' %>">下一页 ›</a><% } %>
+    </div>
+    <% } %>
+  </div>
+  </form>
+</div>
+</body></html>

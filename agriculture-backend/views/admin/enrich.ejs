@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '资料补全' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'diseases', adminName: adminName }) %>
+<div class="wrap">
+  <a class="btn btn-ghost btn-sm" href="/admin/diseases">‹ 返回病虫害库</a>
+  <h1 class="page-title" style="margin-top:12px">百科资料 AI 补全</h1>
+  <div class="page-sub">
+    这里列出<b>资料不全</b>的病害（缺症状、缺病因、缺药剂等），点下面的按钮让 AI 把空缺补齐。<br>
+    原则：<b>只填空缺，不覆盖已有内容</b>；「用户人工纠正」过的记录会自动跳过。
+  </div>
+
+  <% if (flash && flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %><%= typeof msg !== 'undefined' && msg ? '：' + msg : '' %></div><% } %>
+  <% if (flash && flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <!-- 执行区 -->
+  <div class="card" style="padding:18px 20px;margin:16px 0">
+    <form method="post" action="/admin/diseases/enrich/run" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"
+          onsubmit="return confirm('将调用 AI 补全资料，会消耗接口额度。确定继续？')">
+      <label style="font-size:14px">本次补全条数：</label>
+      <select name="limit" style="padding:8px 12px;border-radius:8px;border:1px solid #D8E2DC">
+        <option value="1">1 条（最省）</option>
+        <option value="3" selected>3 条（推荐）</option>
+        <option value="5">5 条（最多）</option>
+      </select>
+      <button class="btn btn-primary" type="submit">🚀 开始补全</button>
+      <span style="font-size:13px;color:#7C8B84">一次最多 5 条，每条约 5～15 秒</span>
+    </form>
+  </div>
+
+  <% if (result) { %>
+    <div class="card" style="padding:18px 20px;margin:16px 0">
+      <b>执行结果</b>（共 <%= result.total %> 条）
+      <table style="width:100%;margin-top:10px;border-collapse:collapse;font-size:14px">
+        <tr style="text-align:left;color:#7C8B84">
+          <th style="padding:6px 0">病害</th><th>结果</th>
+        </tr>
+        <% result.items.forEach(function (it) { %>
+          <tr style="border-top:1px solid #EEF3F0">
+            <td style="padding:8px 0"><%= it.name %></td>
+            <td>
+              <% if (it.filled) { %><span class="tag tag-green">已补：<%= it.filled.join('、') %></span><% } %>
+              <% if (it.skipped) { %><span class="tag tag-amber"><%= it.skipped %></span><% } %>
+              <% if (it.error) { %><span class="tag tag-red">失败：<%= it.error %></span><% } %>
+            </td>
+          </tr>
+        <% }) %>
+      </table>
+      <div style="margin-top:14px">
+        <a class="btn btn-primary btn-sm" href="/admin/diseases/enrich">继续补下一批 ›</a>
+      </div>
+    </div>
+  <% } %>
+
+  <% if (items && items.length) { %>
+    <div class="page-sub" style="margin-top:20px">
+      以下 <b><%= items.length %></b> 条资料不全（按“缺得最多”排序）：
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:60px">ID</th>
+            <th>病害名称</th>
+            <th style="width:130px">类型</th>
+            <th>缺哪些字段</th>
+            <th style="width:110px">现有症状</th>
+            <th style="width:80px">配图</th>
+            <th style="width:90px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+        <% items.forEach(function (it) { %>
+          <tr>
+            <td><%= it.id %></td>
+            <td><b><%= it.name %></b></td>
+            <td><%= it.type || '-' %></td>
+            <td>
+              <% if (it.need.length) { %>
+                <% it.need.forEach(function (f) { %>
+                  <span class="tag tag-amber"><%= f %></span>
+                <% }) %>
+              <% } else { %>
+                <span class="tag tag-green">资料完整</span>
+              <% } %>
+            </td>
+            <td><%= it.symptomLen %> 字</td>
+            <td><%= it.hasImage ? '✅' : '—' %></td>
+            <td><a class="btn btn-ghost btn-sm" href="/admin/diseases/edit/<%= it.id %>">编辑</a></td>
+          </tr>
+        <% }) %>
+        </tbody>
+      </table>
+    </div>
+  <% } else if (!result) { %>
+    <div class="table-wrap">
+      <table><tbody><tr><td class="empty-row">🎉 所有病害资料都完整，不需要补全</td></tr></tbody></table>
+    </div>
+  <% } %>
+</div>
+</body></html>

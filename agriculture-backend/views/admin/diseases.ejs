@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '病虫害库' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'diseases', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">病虫害知识库</h1>
+  <div class="page-sub">共 <%= total %> 种。这里是 App 里「知识百科」和 AI 诊断匹配防治方案的依据<br><b>配图：</b>App 的百科列表里，没有配图的病害会显示灰色占位块。点下面列表中的「＋图」即可上传。</div>
+
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <%
+    // 生成带筛选状态的链接（保留搜索词）
+    function lk(s) {
+      const p = [];
+      if (keyword) p.push('q=' + encodeURIComponent(keyword));
+      if (s) p.push('status=' + s);
+      return '/admin/diseases' + (p.length ? '?' + p.join('&') : '');
+    }
+    const tabs = [
+      { key: '',        label: '全部',   n: counts.all },
+      { key: 'verified', label: '已核实', n: counts.verified },
+      { key: 'pending',  label: '待核实', n: counts.pending },
+      { key: 'draft',    label: 'AI草稿', n: counts.draft },
+      { key: 'noimg',    label: '无配图', n: counts.noimg },
+      { key: 'nosource', label: '无来源', n: counts.nosource }
+    ];
+  %>
+  <div class="toolbar" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">
+    <% tabs.forEach(function (t) { %>
+      <a class="btn btn-sm <%= (status || '') === t.key ? 'btn-primary' : 'btn-ghost' %>" href="<%= lk(t.key) %>">
+        <%= t.label %> <b><%= t.n %></b>
+      </a>
+    <% }); %>
+  </div>
+
+  <div class="toolbar">
+    <form method="get" action="/admin/diseases" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <input type="text" name="q" value="<%= keyword %>" placeholder="搜索病害名/分类..." />
+      <input type="hidden" name="status" value="<%= status || '' %>" />
+      <button class="btn btn-primary" type="submit">搜索</button>
+      <% if (keyword) { %><a class="btn btn-ghost" href="<%= lk(status) %>">重置搜索</a><% } %>
+    </form>
+    <a class="btn btn-ghost" href="/admin/diseases/enrich" title="用 AI 补齐缺失的症状/病因/药剂等字段">✨ 资料补全</a>
+      <a class="btn btn-primary" href="/admin/diseases/new" style="margin-left:auto">＋ 新增病虫害</a>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th style="width:60px">图片</th><th style="width:70px">状态</th><th>名称</th><th>分类</th><th>类型</th><th>危害等级</th><th>来源</th><th>症状摘要</th><th style="text-align:right">操作</th></tr>
+        </thead>
+        <tbody>
+          <% if (!rows.length) { %>
+            <tr><td colspan="9" class="empty-row">没有找到病虫害数据</td></tr>
+          <% } else { rows.forEach(function (d) { %>
+            <tr>
+              <td>
+                <% if (d.image) { %>
+                  <img class="thumb" src="<%= String(d.image).replace(/^https?:\/\/[^/]+/, '') %>" alt="">
+                <% } else { %>
+                  <!-- 无图时引导去编辑页上传：App 的百科列表会显示占位块 -->
+                  <a class="thumb thumb-empty" href="/admin/diseases/edit/<%= d.id %>" title="点击上传配图">＋图</a>
+                <% } %>
+              </td>
+              <td>
+                <% if (d.verified) { %>
+                  <span class="tag tag-green">已核实</span>
+                <% } else { %>
+                  <span class="tag tag-amber">待核实</span>
+                <% } %>
+              </td>
+              <td style="font-weight:600">
+                <%= d.name %>
+                <div style="font-weight:400;font-size:11.5px;color:<%= d.verify_source ? '#0f766e' : '#c2410c' %>;margin-top:2px">
+                  <%= d.verify_source ? ('来源：' + d.verify_source + (d.verify_date ? ' · ' + d.verify_date : '')) : '⚠ 未填数据来源' %>
+                </div>
+              </td>
+              <td><%= d.category || '-' %></td>
+              <td style="font-size:12.5px;color:#64748b"><%= d.type || '-' %></td>
+              <td><span class="tag <%= d.level === 3 ? 'tag-red' : d.level === 1 ? 'tag-green' : 'tag-amber' %>"><%= d.level_text || '未设置' %></span></td>
+              <td style="font-size:12px;color:#64748b"><%= d.category === '用户人工纠正' ? '👤 人工纠正' : (d.category === 'AI 自动收录' ? '🤖 AI 收录' : '📚 内置') %></td>
+              <td style="max-width:280px;color:#64748b;font-size:12.5px"><%= (d.symptom || '').slice(0, 46) %><%= (d.symptom || '').length > 46 ? '...' : '' %></td>
+              <td class="nowrap" style="text-align:right">
+                <% if (!d.verified) { %>
+                  <form method="post" action="/admin/diseases/<%= d.id %>/verify?to=1" style="display:inline">
+                    <button class="btn btn-primary btn-sm" type="submit" title="核实后才会在 App 里显示">核实</button>
+                  </form>
+                <% } else { %>
+                  <form method="post" action="/admin/diseases/<%= d.id %>/verify?to=0" style="display:inline"
+                        onsubmit="return confirm('取消核实后，App 里将看不到「<%= d.name %>」，确定吗？')">
+                    <button class="btn btn-ghost btn-sm" type="submit" title="从 App 隐藏">隐藏</button>
+                  </form>
+                <% } %>
+                <a class="btn btn-ghost btn-sm" href="/admin/diseases/edit/<%= d.id %>">编辑</a>
+                <form method="post" action="/admin/diseases/<%= d.id %>/image" enctype="multipart/form-data" style="display:inline">
+                  <label class="btn btn-ghost btn-sm" style="position:relative;overflow:hidden;cursor:pointer;margin-left:4px">
+                    补图
+                    <input type="file" name="image" accept="image/*" style="position:absolute;inset:0;opacity:0;cursor:pointer"
+                           onchange="if(this.files.length) this.form.submit()">
+                  </label>
+                </form>
+                <form method="post" action="/admin/diseases/<%= d.id %>/delete" style="display:inline"
+                      onsubmit="return confirm('确定删除「<%= d.name %>」吗？对应的图片也会删除。')">
+                  <button class="btn btn-danger btn-sm" type="submit">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+    <% if (totalPages > 1) { %>
+    <div class="pager">
+      <% if (page > 1) { %><a href="/admin/diseases?page=<%= page - 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= status ? '&status=' + status : '' %>">‹ 上一页</a><% } %>
+      <span class="cur"><%= page %> / <%= totalPages %></span>
+      <% if (page < totalPages) { %><a href="/admin/diseases?page=<%= page + 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= status ? '&status=' + status : '' %>">下一页 ›</a><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+</body></html>

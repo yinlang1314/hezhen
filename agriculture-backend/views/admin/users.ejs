@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '用户管理' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'users', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">用户管理</h1>
+  <div class="page-sub">共 <%= total %> 个账号。可查看详情、修改资料、重置密码、删除账号（连同其识别记录与收藏）</div>
+
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <form class="toolbar" method="get" action="/admin/users">
+    <input type="text" name="q" value="<%= keyword %>" placeholder="搜索账号名..." />
+    <button class="btn btn-primary" type="submit">搜索</button>
+    <% if (keyword) { %><a class="btn btn-ghost" href="/admin/users">清除</a><% } %>
+  </form>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th><th>账号</th><th>昵称</th><th>角色</th>
+            <th>识别</th><th>收藏</th><th>注册时间</th><th style="text-align:right">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (!users.length) { %>
+            <tr><td colspan="8" class="empty-row">没有找到用户</td></tr>
+          <% } else { users.forEach(function (u) { %>
+            <tr>
+              <td><%= u.id %></td>
+              <td>
+                <a href="/admin/users/<%= u.id %>" style="font-weight:700"><%= u.username %></a>
+              </td>
+              <td><%= u.nickname || '-' %></td>
+              <td>
+                <% if (u.is_admin) { %><span class="tag tag-amber">管理员</span>
+                <% } else { %><span class="tag tag-grey">普通用户</span><% } %>
+              </td>
+              <td><%= u.history_count %></td>
+              <td><%= u.collection_count %></td>
+              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= u.create_time || '-' %></td>
+              <td class="nowrap" style="text-align:right">
+                <a class="btn btn-ghost btn-sm" href="/admin/users/<%= u.id %>">详情</a>
+                <form method="post" action="/admin/users/<%= u.id %>/delete" style="display:inline"
+                      onsubmit="return confirm('确定删除用户「<%= u.username %>」吗？\\n\\n会同时删除：\\n· 该用户的全部识别记录\\n· 全部收藏\\n· 纠错记录\\n\\n此操作不可恢复！')">
+                  <button class="btn btn-danger btn-sm" type="submit">删除</button>
+                </form>
+              </td>
+            </tr>
+          <% }) } %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <div class="pager">
+      <% if (page > 1) { %><a href="/admin/users?page=<%= page - 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %>">‹ 上一页</a><% } %>
+      <span class="cur"><%= page %> / <%= totalPages %></span>
+      <% if (page < totalPages) { %><a href="/admin/users?page=<%= page + 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %>">下一页 ›</a><% } %>
+    </div>
+    <% } %>
+  </div>
+</div>
+</body></html>
