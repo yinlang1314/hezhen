@@ -139,6 +139,23 @@ Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction 
 | 端口占用 | 3000 被占时提示是哪个进程 |
 | API 密钥 | 未配置时明确说明识别会报错（不是静默失败） |
 
+### 11. 后端启动超时 / 一闪就没
+
+脚本会自动装依赖并打印后端真实输出。如果还失败：
+
+```powershell
+cd agriculture-backend
+npm install        # 先确认依赖装好
+node app.js        # 手动跑一次，直接看报错
+```
+
+完整日志在 `agriculture-backend/logs/startup.log`。
+
+### 12. 启动脚本报 `Join-Path : Cannot find drive`
+
+旧版脚本在探测 HBuilderX 时会去拼 `F:\HBuilderX`，没有 F 盘的电脑会崩。
+**已在 2026-11 修复**（改成字符串拼接 + 存在性判断），更新到最新 main 即可。
+
 ### 9. 空库启动时报 `no such table` / `no such column`
 
 已在 2026-11 修复（建表顺序 + diseases 三列）。如果用的是旧版本代码，更新到最新 main 即可。

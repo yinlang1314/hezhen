@@ -14,6 +14,12 @@ if ($listener) {
   Write-Host "后端已在运行（端口 3000）" -ForegroundColor Yellow
 } else {
   & (Join-Path $here 'start-backend.ps1') -NoBrowser | Out-Host
+  if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "后端没能启动，前端就先不起了。" -ForegroundColor Red
+    Write-Host "按上面提示处理后，重新运行 一键启动.bat 即可" -ForegroundColor Yellow
+    exit 1
+  }
 }
 
 # ---------- 2. H5 开发服务器 ----------
@@ -25,12 +31,16 @@ if ($h5) {
   $cli = $null
   $candidates = @()
   if ($env:HBUILDERX_HOME) { $candidates += (Join-Path $env:HBUILDERX_HOME 'cli.exe') }
-  foreach ($d in @('C:\Program Files\HBuilderX', 'C:\Program Files (x86)\HBuilderX',
-                   'D:\HBuilderX', 'E:\HBuilderX', 'F:\HBuilderX',
-                   'D:\yingyong\HBuilderX', 'E:\wj\HBuilderX',
-                   (Join-Path $env:LOCALAPPDATA 'Programs\HBuilderX'),
-                   (Join-Path $env:USERPROFILE 'HBuilderX'))) {
-    $candidates += (Join-Path $d 'cli.exe')
+  # 注意：不能用 Join-Path 拼不存在的盘符（会抛 DriveNotFoundException），
+  # 这里一律用字符串拼接 + Test-Path 静默判断
+  $vendorDirs = @('C:\Program Files\HBuilderX', 'C:\Program Files (x86)\HBuilderX',
+                  'D:\HBuilderX', 'E:\HBuilderX', 'F:\HBuilderX', 'G:\HBuilderX',
+                  'D:\yingyong\HBuilderX', 'E:\wj\HBuilderX', 'D:\应用\HBuilderX',
+                  'C:\HBuilderX')
+  if ($env:LOCALAPPDATA) { $vendorDirs += ($env:LOCALAPPDATA + '\Programs\HBuilderX') }
+  if ($env:USERPROFILE) { $vendorDirs += ($env:USERPROFILE + '\HBuilderX') }
+  foreach ($d in $vendorDirs) {
+    $candidates += ($d.TrimEnd('\') + '\cli.exe')
   }
   # 注册表里找安装目录（HBuilderX 卸载项）
   foreach ($k in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
@@ -38,7 +48,7 @@ if ($h5) {
                    'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')) {
     Get-ItemProperty $k -ErrorAction SilentlyContinue |
       Where-Object { $_.DisplayName -match 'HBuilderX' -and $_.InstallLocation } |
-      ForEach-Object { $candidates += (Join-Path $_.InstallLocation 'cli.exe') }
+      ForEach-Object { $candidates += ($_.InstallLocation.TrimEnd('\') + '\cli.exe') }
   }
   foreach ($c in $candidates) {
     if ($c -and (Test-Path $c)) { $cli = $c; break }
