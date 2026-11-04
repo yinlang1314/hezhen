@@ -940,7 +940,18 @@ router.post('/recognize',
       return res.json({ code: 200, data: out, message: out.plantName ? out.plantName + '：' + out.name : out.name })
     }
 
-    // ---------- 4) 降级：本地知识库（按图片特征稳定选取，不再每次随机跳）----------
+    // ---------- 4) 没有 AI 密钥：默认明确报错，不返回假结果 ----------
+    // 只有显式开启 DEMO_MODE=1 时才返回演示数据（用于没配密钥时预览界面）
+    if (String(process.env.DEMO_MODE || '') !== '1') {
+      console.log('⚠️ 未配置 AI 密钥，识别请求被拒绝')
+      return res.json({
+        code: 400,
+        message: '未配置 AI 密钥，无法识别。请在 agriculture-backend/.env 中填写 DEEPSEEK_API_KEY（可选 BAIDU_API_KEY / BAIDU_SECRET_KEY），参考 .env.example，保存后重启后端。',
+        data: { noKey: true }
+      })
+    }
+
+    // ---------- 4b) 演示模式：本地知识库取一条（明确标注不是识别结果）----------
     const diseases = await dbAll('SELECT * FROM diseases WHERE verified = 1')
     if (!diseases.length) return res.json({ code: 500, message: '本地知识库为空，且未配置 AI 密钥' })
     const d = pickStable(diseases, imageBuffer)

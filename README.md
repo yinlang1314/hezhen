@@ -116,9 +116,16 @@ Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction 
 
 重启后会按最新表结构自动建表（已支持全新空库初始化）。
 
-### 7. 启动日志提示"未配置密钥"
+### 7. 未配置 AI 密钥时识别会报错
 
-识别会退化为本地模拟。在 `.env` 填 `DEEPSEEK_API_KEY` / `BAIDU_API_KEY` / `BAIDU_SECRET_KEY` 即可。
+这是**有意为之**：没有密钥就不编造识别结果。
+
+```json
+{ "code": 400, "message": "未配置 AI 密钥，无法识别。请..." }
+```
+
+- 正常使用：在 `.env` 填 `DEEPSEEK_API_KEY` / `BAIDU_API_KEY` / `BAIDU_SECRET_KEY`
+- 只想看界面：`.env` 里加 `DEMO_MODE=1`，会返回一条**明确标注「演示数据、非识别结果」**的知识库条目
 
 ### 8. 启动告警 `JWT_SECRET / SESSION_SECRET 未配置`
 
