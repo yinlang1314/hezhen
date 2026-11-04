@@ -14,14 +14,12 @@
       <view class="history-card card" v-for="(item, index) in historyList" :key="item.id" @click="goToDetail(item)">
         <image class="history-image" :src="getImage(item.image)" mode="aspectFill"></image>
         <view class="history-info">
-          <view class="info-header">
-            <text class="disease-name">{{ item.name }}</text>
-            <view class="info-tags">
-              <text class="tag confidence-tag">{{ item.confidence || 0 }}% 匹配</text>
-              <text class="tag level-tag" :class="'level-' + (item.level || 2)">
-                {{ item.levelText || '中度危害' }}
-              </text>
-            </view>
+          <text class="disease-name">{{ item.name }}</text>
+          <view class="info-tags">
+            <text class="tag confidence-tag">{{ item.confidence || 0 }}% 匹配</text>
+            <text class="tag level-tag" :class="'level-' + (item.level || 2)">
+              {{ item.levelText || '中度危害' }}
+            </text>
           </view>
           <text class="disease-type">{{ item.type || item.category }}</text>
           <text class="record-time">识别时间：{{ item.time }}</text>
@@ -275,7 +273,7 @@ export default {
 <style scoped>
 .container {
   background-color: #F8FAFC;
-  min-height: 100%;
+  min-height: 100vh;
   padding-bottom: 160rpx;
 }
 
@@ -322,8 +320,9 @@ export default {
 }
 
 .history-card {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 32rpx;
   margin-bottom: 32rpx;
   transition: all 0.3s ease;
@@ -346,26 +345,32 @@ export default {
 
 .history-info {
   flex: 1;
+  min-width: 0; /* 允许名称在窄屏正确换行/省略 */
+  padding-right: 56rpx; /* 给右上角删除按钮留位 */
 }
 
-.info-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16rpx;
-}
+.info-header { display: none; }
 
 .disease-name {
-  font-size: 34rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 32rpx;
+  line-height: 1.42;
   font-weight: 600;
-  color: #333333;
+  color: #1E293B;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .info-tags {
   display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-  align-items: flex-end;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  align-items: center;
+  margin: 12rpx 0 8rpx;
 }
 
 .tag {
@@ -396,27 +401,40 @@ export default {
 }
 
 .disease-type {
-  font-size: 26rpx;
-  color: #666666;
-  margin-bottom: 8rpx;
   display: block;
+  font-size: 25rpx;
+  color: #64748B;
+  margin-bottom: 8rpx;
 }
 
 .record-time {
-  font-size: 24rpx;
-  color: #999999;
+  display: block;
+  font-size: 23rpx;
+  color: #94A3B8;
 }
 
 .delete-btn {
-  padding: 16rpx;
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: #FEF2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  flex-shrink: 0;
+  line-height: 0;
 }
+.delete-btn:active { background: #FEE2E2; }
 
 .delete-icon {
-  font-size: 30rpx;
-  line-height: 1;
+  width: 34rpx;
+  height: 34rpx;
+  opacity: 0.55;
 }
+.delete-btn:active .delete-icon { opacity: 0.9; }
 
 /* ========== 空状态 ========== */
 .empty-state {
@@ -537,12 +555,7 @@ export default {
 .level-3 { background: #FEE2E2 !important; color: #B91C1C !important; }
 .type-tag { background: #F1F5F9 !important; color: var(--t-sub) !important; }
 
-.delete-btn {
-  width: 68rpx; height: 68rpx; border-radius: 50%;
-  background: #FEF2F2;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
+
 .delete-icon { width: 30rpx; height: 30rpx; }
 
 /* 空状态 */

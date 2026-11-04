@@ -192,7 +192,7 @@ export default {
 <style scoped>
 .container {
   background-color: #F8FAFC;
-  min-height: 100%;
+  min-height: 100vh;
 }
 
 /* ========== 顶部导航栏 ========== */
