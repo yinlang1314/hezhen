@@ -4,7 +4,6 @@
 # 禾诊 · 一键启动（后端 + 前端开发服务器）
 # 后端逻辑已内联，不再需要单独的 start-backend.ps1
 $ErrorActionPreference = 'Continue'
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
 $be = Join-Path $here 'agriculture-backend'

@@ -1,6 +1,5 @@
 ﻿param([switch]$IncludeH5)
 # 禾诊 · 停止服务（默认只停后端 3000；加 -IncludeH5 连前端一起停）
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $ports = @(3000)
 if ($IncludeH5) { $ports += 5173 }
 
