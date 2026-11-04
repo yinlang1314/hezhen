@@ -127,6 +127,18 @@ Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction 
 
 本地调试可忽略；**上线必须配置**，否则任何人都能伪造 token。
 
+### 10. 启动自检都查了什么
+
+每次启动会自动检查并打印：
+
+| 检查 | 行为 |
+|---|---|
+| Node 版本 | <18 直接退出并提示装哪个版本；≥25 警告原生模块风险 |
+| `.env` 是否存在 | 不存在就按 `.env.example` 自动生成（随机密钥） |
+| 数据库驱动 | 打印实际用的是 SQLite 还是 MySQL |
+| 端口占用 | 3000 被占时提示是哪个进程 |
+| API 密钥 | 未配置时明确说明识别会报错（不是静默失败） |
+
 ### 9. 空库启动时报 `no such table` / `no such column`
 
 已在 2026-11 修复（建表顺序 + diseases 三列）。如果用的是旧版本代码，更新到最新 main 即可。
@@ -209,3 +221,49 @@ agriculture-backend/
 ## License
 
 MIT
+
+
+---
+
+## 打包与发布
+
+### 微信小程序
+
+```bash
+# 1. 让 HBuilderX 编译出小程序代码
+cli launch mp-weixin --project <项目路径> --compile true
+#    产物：unpackage/dist/dev/mp-weixin
+
+# 2. 微信开发者工具 → 导入项目 → 选上面的目录
+# 3. 填自己的 AppID（manifest.json → 微信小程序配置）
+# 4. 详情 → 本地设置 → 勾选「不校验合法域名」（仅开发阶段）
+# 5. 上传 → 微信公众平台提交审核
+```
+
+**注意**：小程序正式版要求后端 **HTTPS** 且域名已在微信后台配置。
+
+### Android APK
+
+```text
+HBuilderX → 发行 → 原生App-云打包
+  证书：keystore/hezhen.keystore（别名 hezhen，密码见交付说明）
+  需要：DCloud 账号已绑定手机号
+```
+
+**关键**：APK 里写死的后端地址在 `utils/config.js` 的 `BACKEND_HOST`。
+别人装了这个 APK 只能连到同一个后端，所以必须改成**公网可访问的 HTTPS 地址**，例如：
+
+```js
+export const BACKEND_HOST = 'https://api.你的域名.com'
+```
+
+发布 APK：GitHub 仓库 → Releases → Draft a new release → 上传 .apk → Publish。
+
+### 三者对比
+
+| 形态 | 别人怎么用 | 门槛 |
+|---|---|---|
+| 源码 | git clone / 下载 zip | 装 Node |
+| H5 | 打开网址 | 后端要有公网地址 |
+| 小程序 | 微信里搜/扫码 | 微信审核 + HTTPS 域名 |
+| APK | 下载安装 | 内置后端地址要公网可达 |
