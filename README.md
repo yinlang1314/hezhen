@@ -271,7 +271,21 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 **注意**：小程序正式版要求后端 **HTTPS** 且域名已在微信后台配置。
 
-### Android APK
+### Android APK（仓库内已带安装包）
+
+`dist/apk/hezhen-v1.0.0.apk` · 15 MB · 可直接下载安装。
+
+装机后如果连不上后端：打开「我的 → 设置 → 服务器连接 → 后端地址」，填 `http://电脑IP:3000`，保存并测试。
+
+
+
+| 项 | 值 |
+|---|---|
+| 包名 | `com.yinlang1314.hezhen` |
+| 版本 | 1.0.0（versionCode 100）|
+| 签名 | `keystore/hezhen.keystore`（别名 hezhen）|
+| 体积 | 约 15 MB |
+
 
 ```text
 HBuilderX → 发行 → 原生App-云打包
