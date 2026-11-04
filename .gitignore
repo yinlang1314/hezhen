@@ -31,5 +31,3 @@ agriculture-backend/logs/
 Thumbs.db
 .idea/
 .vscode/
-# APK �� GitHub Releases�������ֿ�
-dist/apk/
