@@ -24,7 +24,8 @@ export const PORT = 3000
 // 【运行时覆盖】改了地址不想重新编译？在小程序开发者工具的
 //   调试器 → Storage 面板，新增键 `backendUrl`（字符串），值为后端地址，
 //   然后点「编译」即可生效（优先级高于下面的常量）。
-export const BACKEND_HOST = 'http://127.0.0.1'
+// APK/真机用：改成电脑当前的局域网 IP（后端启动时会打印）
+export const BACKEND_HOST = 'http://10.114.25.6'
 export const APP_BASE_URL = BACKEND_HOST + ':' + PORT
 
 const PROBE_CACHE_KEY = 'apiBaseUrl:v2'
@@ -257,3 +258,32 @@ export function ensureBaseUrl() {
 
 // 模块加载即开始探测，页面渲染时地址已经基本确定
 ensureBaseUrl()
+
+// ==================== 运行时设置后端地址 ====================
+// 用途：App/小程序 装到别人手机上时，让对方在「系统设置 → 后端地址」里填自己的服务器，
+// 不用重新打包。值存在本地存储里，优先级高于编译时的 BACKEND_HOST。
+export function currentBackendUrl() {
+  try {
+    return trimSlash(uni.getStorageSync('backendUrl') || '') || _resolved
+  } catch (e) {
+    return _resolved
+  }
+}
+
+export function setBackendUrl(url) {
+  const v = trimSlash(String(url || '').trim())
+  try {
+    if (v) uni.setStorageSync('backendUrl', v)
+    else uni.removeStorageSync('backendUrl')
+  } catch (e) {}
+  // 手动设置后不再自动探测，避免被探测结果覆盖
+  _probed = true
+  _probing = false
+  if (v) {
+    setBase(v)
+  } else {
+    // 恢复默认（编译时的地址）
+    setBase(trimSlash(APP_BASE_URL))
+  }
+  return v || trimSlash(APP_BASE_URL)
+}

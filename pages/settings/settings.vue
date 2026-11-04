@@ -22,6 +22,23 @@
       <text class="pwd-tip">修改后请用新密码登录。如果这个账号是管理员，同一个密码也能登录管理后台。</text>
     </view>
 
+    <view class="group-title">服务器连接</view>
+    <view class="setting-list">
+      <view class="setting-item" @click="toggleServer">
+        <text class="setting-label">后端地址</text>
+        <text class="setting-value">{{ serverUrl || '默认（编译时地址）' }}</text>
+        <text class="setting-arrow">›</text>
+      </view>
+    </view>
+    <view class="pwd-form" v-if="showServer">
+      <input class="pwd-input" v-model="serverInput" placeholder="例如 http://192.168.1.5:3000" />
+      <view class="pwd-actions">
+        <view class="pwd-btn cancel" @click="resetServer">恢复默认</view>
+        <view class="pwd-btn ok" @click="saveServer">{{ savingServer ? '测试中...' : '保存并测试' }}</view>
+      </view>
+      <text class="pwd-tip">填后端所在电脑/服务器的地址（带端口）。保存后立即生效，识别、百科、登录都会走新地址。留空保存＝恢复默认。</text>
+    </view>
+
     <view class="group-title">通用</view>
     <view class="setting-list">
       <view class="setting-item">
@@ -66,6 +83,7 @@
 
 <script>
 import { api } from '@/utils/api.js'
+import { currentBackendUrl, setBackendUrl } from '@/utils/config.js'
 import NavBar from '@/components/NavBar.vue'
 
 export default {
@@ -82,7 +100,11 @@ export default {
       newPwd: '',
       newPwd2: '',
       savingPwd: false,
-      pwdChanged: true
+      pwdChanged: true,
+      showServer: false,
+      serverUrl: '',
+      serverInput: '',
+      savingServer: false
     }
   },
   onLoad() {
@@ -94,6 +116,8 @@ export default {
     this.getCacheSize()
     const info = uni.getStorageSync('userInfo') || {}
     this.pwdChanged = info.pwdChanged !== false
+    this.serverUrl = currentBackendUrl() || ''
+    this.serverInput = this.serverUrl
   },
   onShow() {
     // 使用 token 进行安全校验
@@ -127,6 +151,56 @@ export default {
       } finally {
         this.savingPwd = false
       }
+    },
+
+    // ---------- 服务器地址 ----------
+    toggleServer() {
+      this.showServer = !this.showServer
+      this.serverInput = this.serverUrl
+    },
+
+    normalizeServer(v) {
+      let s = String(v || '').trim()
+      if (!s) return ''
+      if (!/^https?:\/\//i.test(s)) s = 'http://' + s
+      return s.replace(/\/+$/, '')
+    },
+
+    async saveServer() {
+      if (this.savingServer) return
+      const url = this.normalizeServer(this.serverInput)
+      if (url && !/^https?:\/\/[^/:]+(:\d+)?$/i.test(url) && !/^https?:\/\/[^/]+\.[^/]+/i.test(url)) {
+        return uni.showToast({ title: '地址格式不对', icon: 'none' })
+      }
+      this.savingServer = true
+      try {
+        const finalUrl = setBackendUrl(url)
+        this.serverUrl = finalUrl
+        // 测试连通性
+        const ok = await new Promise((resolve) => {
+          uni.request({
+            url: finalUrl + '/api/health',
+            method: 'GET',
+            timeout: 6000,
+            success: (res) => resolve(res.statusCode === 200),
+            fail: () => resolve(false)
+          })
+        })
+        this.showServer = false
+        uni.showToast({ title: ok ? '已保存，连接正常' : '已保存，但连不上后端', icon: ok ? 'success' : 'none' })
+      } catch (e) {
+        uni.showToast({ title: e.message || '保存失败', icon: 'none' })
+      } finally {
+        this.savingServer = false
+      }
+    },
+
+    resetServer() {
+      const def = setBackendUrl('')
+      this.serverUrl = def
+      this.serverInput = def
+      this.showServer = false
+      uni.showToast({ title: '已恢复默认地址', icon: 'none' })
     },
 
     toggleDarkMode(e) {
