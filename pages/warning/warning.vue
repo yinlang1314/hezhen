@@ -75,7 +75,7 @@
       <view class="empty-state" v-else>
         <image class="empty-emoji" src="/static/icons/empty-warning.png" mode="aspectFit" />
         <text class="empty-title">暂无预警信息</text>
-        <text class="empty-desc">当前地区暂无病虫害预警</text>
+        <text class="empty-desc">当前没有需要关注的病虫害预警，可稍后再看看</text>
         <button class="go-btn" @click="goToRecognize">去识别病虫害</button>
       </view>
 
@@ -449,11 +449,34 @@ export default {
 .warning-time { font-size: 24rpx; color: #999; }
 
 /* 空状态 */
-.empty-state { display: flex; flex-direction: column; align-items: center; padding: 240rpx 48rpx; }
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 340rpx);
+  padding: 0 60rpx 120rpx;
+}
 .empty-emoji { width: 144rpx; height: 144rpx; margin-bottom: 48rpx; opacity: 0.9; }
 .empty-title { font-size: 36rpx; font-weight: 600; color: #333; margin-bottom: 16rpx; }
 .empty-desc { font-size: 28rpx; color: #999; margin-bottom: 60rpx; }
-.go-btn { background: #2ECC71; color: #fff; border: none; border-radius: 40rpx; padding: 16rpx 50rpx; font-size: 28rpx; }
+.go-btn {
+  margin-top: 44rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  padding: 0 64rpx;
+  background: linear-gradient(135deg, #34D399, #059669);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 46rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  box-shadow: 0 12rpx 32rpx rgba(5, 150, 105, 0.25);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.go-btn:active { transform: translateY(2rpx); box-shadow: 0 6rpx 16rpx rgba(5, 150, 105, 0.22); }
 .bottom-space { height: 200rpx; }
 
 /* ============ 详情弹窗 ============ */

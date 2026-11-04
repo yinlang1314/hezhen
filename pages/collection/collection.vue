@@ -28,10 +28,11 @@
     <view class="empty-state" v-else>
       <image class="empty-emoji" src="/static/icons/empty-collect.png" mode="aspectFit" />
       <text class="empty-text">暂无收藏内容</text>
+      <text class="empty-hint">在百科详情页点右下角收藏，就会出现在这里</text>
       <button class="go-btn" @click="goToEncyclopedia">去浏览百科</button>
     </view>
 
-    <TabBar current="history" />
+    <TabBar current="" />
   </view>
 </template>
 
@@ -259,7 +260,15 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 300rpx;
+  justify-content: center;
+  min-height: calc(100vh - 320rpx);
+  padding: 0 60rpx 120rpx;
+}
+.empty-hint {
+  font-size: 24rpx;
+  color: #94A3B8;
+  margin-top: 10rpx;
+  letter-spacing: 0.5rpx;
 }
 
 .empty-emoji { width: 120rpx; height: 120rpx; margin-bottom: 32rpx; opacity: 0.9; }
@@ -277,15 +286,22 @@ export default {
 }
 
 .go-btn {
-  background-color: #2ECC71;
+  margin-top: 44rpx;
+  height: 92rpx;
+  line-height: 92rpx;
+  padding: 0 64rpx;
+  background: linear-gradient(135deg, #34D399, #059669);
   color: #FFFFFF;
   border: none;
-  border-radius: 40rpx;
-  padding: 16rpx 50rpx;
+  border-radius: 46rpx;
   font-size: 28rpx;
+  font-weight: 600;
+  letter-spacing: 1rpx;
+  box-shadow: 0 12rpx 32rpx rgba(5, 150, 105, 0.25);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
+.go-btn:active { transform: translateY(2rpx); box-shadow: 0 6rpx 16rpx rgba(5, 150, 105, 0.22); }
 
 .go-btn:hover {
   background-color: #27AE60;
