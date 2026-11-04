@@ -1,0 +1,25 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/login",
+    "pages/register/register",
+    "pages/recognize/recognize",
+    "pages/encyclopedia/encyclopedia",
+    "pages/encyclopedia-detail/encyclopedia-detail",
+    "pages/history/history",
+    "pages/profile/profile",
+    "pages/warning/warning",
+    "pages/collection/collection",
+    "pages/settings/settings",
+    "pages/help/help",
+    "pages/feedback/feedback",
+    "pages/chat/chat",
+    "pages/profile-edit/profile-edit"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F8FAFC"
+  },
+  "usingComponents": {}
+}

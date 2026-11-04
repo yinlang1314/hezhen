@@ -17,10 +17,14 @@ export const PORT = 3000
 //    H5（浏览器）会自动用当前网页地址，这里填什么都没关系。
 //
 // 【换网络后要改这里】填后端启动时打印的地址（去掉 :3000 那部分端口）：
-//    · 微信开发者工具里调试  -> 'http://localhost'      ← 推荐先用这个
-//    · 手机上的小程序        -> 'http://10.227.89.6'    ← 换成电脑当前的局域网 IP
+//    · 微信开发者工具里调试  -> 'http://127.0.0.1'      ← 默认值（工具和电脑在同一台机器）
+//    · 手机真机预览          -> 'http://<电脑局域网IP>'  ← 见下方「运行时覆盖」
 //    · 正式发布的小程序      -> 'https://你的域名.com'   ← 小程序正式版必须是 HTTPS
-export const BACKEND_HOST = 'http://10.114.25.6'
+//
+// 【运行时覆盖】改了地址不想重新编译？在小程序开发者工具的
+//   调试器 → Storage 面板，新增键 `backendUrl`（字符串），值为后端地址，
+//   然后点「编译」即可生效（优先级高于下面的常量）。
+export const BACKEND_HOST = 'http://127.0.0.1'
 export const APP_BASE_URL = BACKEND_HOST + ':' + PORT
 
 const PROBE_CACHE_KEY = 'apiBaseUrl:v2'
@@ -81,7 +85,10 @@ const _waiters = []
   const origin = platform === 'h5' ? trimSlash(pageOrigin()) : ''
   const cached = trimSlash(readCached())
   const fallback = trimSlash(APP_BASE_URL)
-  _resolved = (cached && cached !== origin && portOf(cached)) ? cached : (origin || fallback)
+  // 运行时覆盖（小程序开发者工具里改 Storage 的 backendUrl 即可，不用重新编译）
+  let override = ''
+  try { override = trimSlash(uni.getStorageSync('backendUrl') || '') } catch (e) { override = '' }
+  _resolved = override || ((cached && cached !== origin && portOf(cached)) ? cached : (origin || fallback))
 })()
 
 function portOf(u) {

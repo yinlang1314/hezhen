@@ -1,0 +1,1 @@
+"use strict";const e=require("../../common/vendor.js"),r={components:{NavBar:()=>"../../components/NavBar.js"}};if(!Array){e.resolveComponent("NavBar")()}const o=e._export_sfc(r,[["render",function(r,o,n,t,a,c){return{a:e.p({title:"使用帮助"})}}],["__scopeId","data-v-7c7b0319"]]);wx.createPage(o);

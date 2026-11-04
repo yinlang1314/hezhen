@@ -1,0 +1,1 @@
+"use strict";const e=require("../common/vendor.js");exports.safeBack=function(n){try{const n="function"==typeof getCurrentPages?getCurrentPages():[];if(n&&n.length>1)return void e.index.navigateBack()}catch(t){}e.index.reLaunch({url:n||"/pages/index/index"})};

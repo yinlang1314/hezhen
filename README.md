@@ -227,7 +227,29 @@ MIT
 
 ## 打包与发布
 
-### 微信小程序
+### 微信小程序（仓库内已带编译好的包）
+
+`dist/mp-weixin/` 是**已编译好的小程序代码**，不需要装 HBuilderX 就能导入：
+
+```text
+1. 装「微信开发者工具」（https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html）
+2. 打开 → 导入项目 → 目录选 dist/mp-weixin
+3. AppID 已预设为 wxad5fc24db487f28b（换成你自己的也行）
+4. 详情 → 本地设置 → 勾选「不校验合法域名」
+5. 点「预览」，手机扫码即可在手机上打开
+```
+
+**后端地址怎么改**（产物是编译后的 JS，改源码要重新编译）。
+两种办法：
+
+| 办法 | 操作 | 适合 |
+|---|---|---|
+| 改 Storage（推荐）| 开发者工具 → 调试器 → Storage → 新增 `backendUrl` = `http://电脑IP:3000` → 点「编译」 | 临时切换 |
+| 改源码重编译 | 改 `utils/config.js` 的 `BACKEND_HOST` → HBuilderX 重新编译 | 长期固定 |
+
+默认值是 `http://127.0.0.1`：**开发者工具和电脑在同一台机器时可直接用**。
+
+### 自己编译小程序
 
 ```bash
 # 1. 让 HBuilderX 编译出小程序代码
