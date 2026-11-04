@@ -1,3 +1,19 @@
+// ==================== Node 版本检查 ====================
+// 太旧：语法/依赖跑不起来；太新：sqlite3 等原生模块可能没有预编译包（需现场编译，容易失败）
+const NODE_MAJOR = Number(process.versions.node.split('.')[0])
+if (NODE_MAJOR < 18) {
+  console.error('')
+  console.error('❌ Node.js 版本过低：当前 v' + process.versions.node + '，本项目至少需要 v18')
+  console.error('   推荐安装 v22 LTS：https://nodejs.org/zh-cn')
+  console.error('   安装时勾选 Add to PATH，装完关掉所有终端重开')
+  console.error('')
+  process.exit(1)
+}
+if (NODE_MAJOR >= 25) {
+  console.warn('⚠️  当前 Node v' + process.versions.node + ' 属于较新的大版本，sqlite3 等原生模块可能没有预编译包。')
+  console.warn('   如果 npm install 报编译错误，请改用 Node 22 LTS。')
+}
+
 // 读取 .env 里的配置（API 密钥等），必须在用到之前加载。
 // 用绝对路径：无论从哪个目录启动 node，都能正确读到 agriculture-backend/.env
 const fsx = require('fs')
@@ -326,6 +342,7 @@ async function startServer() {
           ? '未配置密钥 —— 当前 DEMO_MODE=1，识别会返回「演示数据」（明确标注非识别结果）'
           : '未配置密钥 —— 识别功能会直接报错提示配置密钥（不再返回假结果）。填好 DEEPSEEK_API_KEY 后重启即可；只想看界面可设 DEMO_MODE=1'
       })())
+      console.log('🧩 Node ' + process.versions.node + ' ｜ 数据库驱动 ' + (String(process.env.DB_DRIVER || 'sqlite').toLowerCase() === 'mysql' ? 'MySQL' : 'SQLite'))
       console.log(`🔧 管理后台：http://localhost:${PORT}/admin`)
     })
 
