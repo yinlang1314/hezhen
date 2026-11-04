@@ -19,12 +19,22 @@ function publicBaseUrl(req) {
   return req.protocol + '://' + req.get('host');
 }
 // 把库里的图片路径规范化为相对地址
+// 注意：/uploads/ 里的图片是用户上传/本地素材，不在 Git 仓库里。
+// 别人 clone 后这些文件不存在，直接返回路径会给前端一个 404 的破图，
+// 所以这里检查文件是否存在，不存在就返回空串（前端显示「暂无配图」）。
 function toRelativeImage(p) {
   if (!p) return '';
   const s = String(p).trim();
   const m = s.match(/\/uploads\/[^?#]+/);
-  if (m) return m[0];
-  return s.charAt(0) === '/' ? s : (UPLOAD_PATH_PREFIX + s);
+  const rel = m ? m[0] : (s.charAt(0) === '/' ? s : (UPLOAD_PATH_PREFIX + s));
+  if (rel.indexOf('/uploads/') === 0) {
+    try {
+      if (!fs.existsSync(path.join(__dirname, '..', 'public', rel.slice(1)))) return '';
+    } catch (e) {
+      return '';
+    }
+  }
+  return rel;
 }
 const UPLOAD_DIR = path.join(__dirname, '../public/uploads');
 // ==========================================================
