@@ -144,7 +144,7 @@ export default {
       const u = String(url || '').trim()
       if (!u) return '/static/default-disease.png'
       if (u.charAt(0) !== '/') return u
-      if (u.indexOf('/uploads/') !== 0) return u
+      // 相对路径统一交给 imageUrl 拼后端地址（/uploads/、/images/seed/ 都要处理）
       return imageUrl(u)
     },
 
@@ -238,8 +238,9 @@ export default {
 }
 
 .collection-card {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   padding: 32rpx;
   margin-bottom: 32rpx;
   transition: all 0.3s ease;
@@ -261,37 +262,54 @@ export default {
 
 .collection-info {
   flex: 1;
+  min-width: 0;
+  padding-right: 56rpx; /* 给右上角删除按钮留位 */
 }
 
 .disease-name {
-  font-size: 34rpx;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 32rpx;
+  line-height: 1.42;
   font-weight: 600;
-  color: #333333;
-  margin-bottom: 16rpx;
+  color: #1E293B;
+  margin-bottom: 12rpx;
+  word-break: break-word;
 }
 
 .disease-type {
-  font-size: 26rpx;
-  color: #666666;
-  margin-bottom: 8rpx;
   display: block;
+  font-size: 25rpx;
+  color: #64748B;
+  margin-bottom: 8rpx;
 }
 
 .collect-time {
-  font-size: 24rpx;
-  color: #999999;
+  display: block;
+  font-size: 23rpx;
+  color: #94A3B8;
 }
 
 .delete-btn {
-  padding: 16rpx;
+  position: absolute;
+  top: 16rpx;
+  right: 16rpx;
+  width: 68rpx;
+  height: 68rpx;
+  border-radius: 50%;
+  background: #FEF2F2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  flex-shrink: 0;
+  line-height: 0;
 }
+.delete-btn:active { background: #FEE2E2; }
+.delete-icon { width: 34rpx; height: 34rpx; opacity: 0.55; }
+.delete-btn:active .delete-icon { opacity: 0.9; }
 
-.delete-btn image {
-  width: 40rpx;
-  height: 40rpx;
-}
 
 /* ========== 空状态 ========== */
 .empty-state {
