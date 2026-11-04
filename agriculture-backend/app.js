@@ -1,6 +1,26 @@
 // 读取 .env 里的配置（API 密钥等），必须在用到之前加载。
 // 用绝对路径：无论从哪个目录启动 node，都能正确读到 agriculture-backend/.env
-require('dotenv').config({ path: require('path').join(__dirname, '.env') })
+const fsx = require('fs')
+const pathx = require('path')
+const ENV_PATH = pathx.join(__dirname, '.env')
+
+// 首次运行自动生成 .env：照 .env.example 复制，并写入随机的鉴权密钥。
+// 这样别人 clone 下来直接 npm start 就能跑，不需要手工复制/填配置。
+if (!fsx.existsSync(ENV_PATH)) {
+  const example = pathx.join(__dirname, '.env.example')
+  if (fsx.existsSync(example)) {
+    const crypto = require('crypto')
+    let content = fsx.readFileSync(example, 'utf8')
+    content = content
+      .replace(/^JWT_SECRET=.*$/m, 'JWT_SECRET=' + crypto.randomBytes(24).toString('hex'))
+      .replace(/^SESSION_SECRET=.*$/m, 'SESSION_SECRET=' + crypto.randomBytes(24).toString('hex'))
+    fsx.writeFileSync(ENV_PATH, content, 'utf8')
+    console.log('ℹ️  未找到 .env，已按 .env.example 自动创建（含随机鉴权密钥）')
+    console.log('    要启用真实 AI 识别，请在 agriculture-backend/.env 填写 DEEPSEEK_API_KEY 等密钥')
+  }
+}
+
+require('dotenv').config({ path: ENV_PATH })
 
 const express = require('express')
 const cors = require('cors')

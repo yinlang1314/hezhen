@@ -30,19 +30,13 @@
 ## 快速开始
 
 ```bash
-# 1. 进入后端
 cd agriculture-backend
-
-# 2. 配置环境变量（照 .env.example 复制一份）
-cp .env.example .env
-#    填 DEEPSEEK_API_KEY / BAIDU_API_KEY / BAIDU_SECRET_KEY
-#    生成鉴权密钥：JWT_SECRET / SESSION_SECRET（各 32 位以上随机串）
-
-# 3. 安装依赖并启动
 npm install
-node app.js
-# 或双击项目根目录的「一键启动.bat」
+npm start
 ```
+
+**不需要手动创建 .env**：首次启动会自动按 `.env.example` 生成，并写入随机鉴权密钥。
+想启用真实 AI 识别，再编辑 `.env` 填 API 密钥即可。
 
 - 接口：`http://localhost:3000`
 - 管理后台：`http://localhost:3000/admin`
