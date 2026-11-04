@@ -32,14 +32,28 @@
       <button class="go-btn" @click="goToEncyclopedia">去浏览百科</button>
     </view>
 
-    <LoginTip
+    <AppDialog
       :visible="showLoginTip"
       title="需要登录"
       content="识别记录和收藏会保存在你的账号里，登录后即可查看。"
       confirm-text="去登录"
       cancel-text="暂时不看"
-      @confirm="onLoginTipConfirm"
-      @cancel="onLoginTipCancel"
+      icon="lock"
+      @confirm="onLoginConfirm"
+      @cancel="onLoginCancel"
+    />
+
+    <!-- 取消收藏 / 清空的确认弹窗 -->
+    <AppDialog
+      :visible="showConfirm"
+      :title="confirmTitle"
+      :content="confirmContent"
+      :confirm-text="confirmText"
+      cancel-text="取消"
+      icon="delete"
+      :danger="true"
+      @confirm="onConfirmOk"
+      @cancel="onConfirmCancel"
     />
 
     <TabBar current="" />
@@ -51,15 +65,20 @@ import { imageUrl } from '@/utils/config.js'
 import { safeBack } from '@/utils/nav.js'
 import TabBar from '@/components/TabBar.vue'
 import NavBar from '@/components/NavBar.vue'
-import LoginTip from '@/components/LoginTip.vue'
+import AppDialog from '@/components/AppDialog.vue'
 import { api } from '@/utils/api.js'
 
 export default {
-  components: { TabBar, NavBar, LoginTip },
+  components: { TabBar, NavBar, AppDialog },
   data() {
     return {
       collectionList: [],
-      showLoginTip: false
+      showLoginTip: false,
+      showConfirm: false,
+      confirmTitle: '确认操作',
+      confirmContent: '',
+      confirmText: '确定',
+      confirmAction: null
     }
   },
 
@@ -74,12 +93,30 @@ export default {
   },
 
   methods: {
+    // 统一确认弹窗
+    askConfirm(content, confirmText, action) {
+      this.confirmContent = content
+      this.confirmText = confirmText || '确定'
+      this.confirmAction = action
+      this.showConfirm = true
+    },
+    onConfirmOk() {
+      this.showConfirm = false
+      const fn = this.confirmAction
+      this.confirmAction = null
+      if (typeof fn === 'function') fn()
+    },
+    onConfirmCancel() {
+      this.showConfirm = false
+      this.confirmAction = null
+    },
+
     // 未登录时的自定义弹窗
-    onLoginTipConfirm() {
+    onLoginConfirm() {
       this.showLoginTip = false
       uni.navigateTo({ url: '/pages/login/login?from=collection' })
     },
-    onLoginTipCancel() {
+    onLoginCancel() {
       this.showLoginTip = false
       try { safeBack() } catch (e) {
         uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
@@ -124,38 +161,25 @@ export default {
 
     async deleteCollection(index) {
       const item = this.collectionList[index]
-      uni.showModal({
-        title: '提示',
-        content: '确定要取消收藏这条记录吗？',
-        success: async (res) => {
-          if (res.confirm) {
-            try {
-              if (item.id) await api.delCollect(item.id)
-            } catch (e) { /* 忽略 */ }
-            this.collectionList.splice(index, 1)
-            uni.setStorageSync('collectionList', this.collectionList)
-            uni.showToast({ title: '已取消收藏', icon: 'success' })
-          }
-        }
-      })
+      this.askConfirm('确定要取消收藏这条记录吗？', '取消收藏', async () => {
+          try {
+            if (item.id) await api.delCollect(item.id)
+          } catch (e) { /* 忽略 */ }
+          this.collectionList.splice(index, 1)
+          uni.setStorageSync('collectionList', this.collectionList)
+          uni.showToast({ title: '已取消收藏', icon: 'success' })
+        })
     },
 
     async clearAllCollection() {
-      uni.showModal({
-        title: '提示',
-        content: '确定要清空所有收藏吗？此操作不可恢复',
-        success: async (res) => {
-          if (res.confirm) {
-            // 逐条删除
-            for (const item of this.collectionList) {
-              try { if (item.id) await api.delCollect(item.id) } catch (e) { /* 忽略 */ }
-            }
-            this.collectionList = []
-            uni.setStorageSync('collectionList', [])
-            uni.showToast({ title: '清空成功', icon: 'success' })
+      this.askConfirm('确定要清空所有收藏吗？此操作不可恢复', '清空', async () => {
+          for (const item of this.collectionList) {
+            try { if (item.id) await api.delCollect(item.id) } catch (e) { /* 忽略 */ }
           }
-        }
-      })
+          this.collectionList = []
+          uni.setStorageSync('collectionList', [])
+          uni.showToast({ title: '清空成功', icon: 'success' })
+        })
     },
 
     goToEncyclopedia() {

@@ -4,6 +4,6 @@
   "usingComponents": {
     "tab-bar": "../../components/TabBar",
     "nav-bar": "../../components/NavBar",
-    "login-tip": "../../components/LoginTip"
+    "app-dialog": "../../components/AppDialog"
   }
 }
