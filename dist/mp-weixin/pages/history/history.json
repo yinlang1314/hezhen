@@ -3,6 +3,7 @@
   "backgroundColor": "#F8FAFC",
   "usingComponents": {
     "tab-bar": "../../components/TabBar",
-    "nav-bar": "../../components/NavBar"
+    "nav-bar": "../../components/NavBar",
+    "login-tip": "../../components/LoginTip"
   }
 }

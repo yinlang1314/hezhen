@@ -49,6 +49,15 @@
     </view>
 
     <!-- 底部导航栏 -->
+    <LoginTip
+      :visible="showLoginTip"
+      title="需要登录"
+      content="识别记录和收藏会保存在你的账号里，登录后即可查看。"
+      confirm-text="去登录"
+      cancel-text="暂时不看"
+      @confirm="onLoginTipConfirm"
+      @cancel="onLoginTipCancel"
+    />
     <TabBar current="history" />
   </view>
 </template>
@@ -58,10 +67,11 @@ import { imageUrl, ensureBaseUrl } from '@/utils/config.js'
 import { safeBack } from '@/utils/nav.js'
 import TabBar from '@/components/TabBar.vue'
 import NavBar from '@/components/NavBar.vue'
+import LoginTip from '@/components/LoginTip.vue'
 import { api } from '@/utils/api.js'
 
 export default {
-  components: { TabBar, NavBar },
+  components: { TabBar, NavBar, LoginTip },
 
   data() {
     return {
@@ -70,7 +80,8 @@ export default {
       total: 0,            // 总条数
       loadingMore: false,  // 防止重复触发加载
       historyList: [],
-      loading: false
+      loading: false,
+      showLoginTip: false
     }
   },
 
@@ -78,16 +89,7 @@ export default {
     
     // 游客未登录：这些数据属于个人，引导去登录
     if (!uni.getStorageSync('token')) {
-      uni.showModal({
-        title: '需要登录',
-        content: '识别记录和收藏会保存在账号里，登录后即可查看。',
-        confirmText: '去登录',
-        cancelText: '返回',
-        success: (r) => {
-          if (r.confirm) uni.navigateTo({ url: '/pages/login/login?from=history' })
-          else safeBack()
-        }
-      })
+      this.showLoginTip = true
       return
     }
 // 后端地址探测完成后重新渲染，保证图片地址正确
@@ -107,6 +109,17 @@ export default {
   },
 
   methods: {
+    // 未登录时的自定义弹窗
+    onLoginTipConfirm() {
+      this.showLoginTip = false
+      uni.navigateTo({ url: '/pages/login/login?from=history' })
+    },
+    onLoginTipCancel() {
+      this.showLoginTip = false
+      try { safeBack() } catch (e) {
+        uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
+      }
+    },
     async loadHistory(append) {
       // append=true 表示「加载更多」：把新一页追加到已有列表后面
       if (append) {
