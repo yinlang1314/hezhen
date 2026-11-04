@@ -63,6 +63,20 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 ---
 
+## 一键启动（**只需要点这一个**）
+
+| 文件 | 作用 |
+|---|---|
+| **一键启动.bat** | 后端 + 前端一起启动，自动打开页面 |
+| **停止服务.bat** | 停止后端（`stop-all.ps1 -IncludeH5` 连前端一起停）|
+
+底层是两个 PowerShell 脚本（`start-all.ps1` / `stop-all.ps1`），BAT 只是双击入口。
+
+启动时会自动：检查 MySQL 服务 → 检查依赖（缺了自动 `npm install`）→ 启动后端 → 健康检查 → 启动前端 → 打开页面。
+失败会打印后端真实报错和日志路径（`agriculture-backend/logs/startup.log`）。
+
+---
+
 ## 常见问题
 
 ### 1. `npm install` 失败 / sqlite3 编译报错
@@ -127,7 +141,7 @@ Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction 
 
 本地调试可忽略；**上线必须配置**，否则任何人都能伪造 token。
 
-### 10. 启动自检都查了什么
+### 9. 启动自检都查了什么
 
 每次启动会自动检查并打印：
 
@@ -139,7 +153,7 @@ Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction 
 | 端口占用 | 3000 被占时提示是哪个进程 |
 | API 密钥 | 未配置时明确说明识别会报错（不是静默失败） |
 
-### 11. 后端启动超时 / 一闪就没
+### 10. 后端启动超时 / 一闪就没
 
 脚本会自动装依赖并打印后端真实输出。如果还失败：
 
@@ -151,12 +165,12 @@ node app.js        # 手动跑一次，直接看报错
 
 完整日志在 `agriculture-backend/logs/startup.log`。
 
-### 12. 启动脚本报 `Join-Path : Cannot find drive`
+### 11. 启动脚本报 `Join-Path : Cannot find drive`
 
 旧版脚本在探测 HBuilderX 时会去拼 `F:\HBuilderX`，没有 F 盘的电脑会崩。
 **已在 2026-11 修复**（改成字符串拼接 + 存在性判断），更新到最新 main 即可。
 
-### 9. 空库启动时报 `no such table` / `no such column`
+### 12. 空库启动时报 `no such table` / `no such column`
 
 已在 2026-11 修复（建表顺序 + diseases 三列）。如果用的是旧版本代码，更新到最新 main 即可。
 
@@ -235,11 +249,6 @@ agriculture-backend/
 
 ---
 
-## License
-
-MIT
-
-
 ---
 
 ## 打包与发布
@@ -294,15 +303,12 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 装机后如果连不上后端：打开「我的 → 设置 → 服务器连接 → 后端地址」，填 `http://电脑IP:3000`，保存并测试。
 
-
-
 | 项 | 值 |
 |---|---|
 | 包名 | `com.yinlang1314.hezhen` |
 | 版本 | 1.0.0（versionCode 100）|
 | 签名 | `keystore/hezhen.keystore`（别名 hezhen）|
 | 体积 | 约 15 MB |
-
 
 ```text
 HBuilderX → 发行 → 原生App-云打包
@@ -327,3 +333,9 @@ export const BACKEND_HOST = 'https://api.你的域名.com'
 | H5 | 打开网址 | 后端要有公网地址 |
 | 小程序 | 微信里搜/扫码 | 微信审核 + HTTPS 域名 |
 | APK | 下载安装 | 内置后端地址要公网可达 |
+
+---
+
+## License
+
+MIT
