@@ -100,8 +100,8 @@ async function main() {
         // verified=0：先入待核实队列，人工核实后才在 App 显示
       `INSERT INTO diseases (name, type, category, level, level_text, image, verified, host, symptom, cause, spread, occurrence, medicines, suggestions, prevention)
          VALUES (?, ?, ?, ?, ?, '', 0, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [it.name, it.host ? it.host + '病害' : 'AI 批量生成', 'AI 批量生成（待核实）', level, levelText,
-         it.host || '', plan.symptom || '', plan.cause || '', plan.spread || '', plan.occurrence || '',
+        [cleanText(it.name), it.host ? cleanText(it.host) + '病害' : 'AI 批量生成', 'AI 批量生成（待核实）', level, levelText,
+         cleanText(it.host || ''), cleanText(plan.symptom), cleanText(plan.cause), cleanText(plan.spread), cleanText(plan.occurrence),
          j(plan.medicines), j(plan.suggestions), j(plan.prevention)]
       )
       added.push(it.name)

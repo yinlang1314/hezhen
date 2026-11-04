@@ -176,6 +176,19 @@ node app.js        # 手动跑一次，直接看报错
 
 ---
 
+### 13. 知识库里出现乱码（显示为 �）
+
+历史遗留问题：早期 AI 生成/导入的文本里混入了 U+FFFD 占位符。
+已用脚本批量修复（69 条），并加了写库前清洗。
+
+以后再出现，可以跑：
+
+```bash
+cd agriculture-backend
+node scripts/fix-mojibake.js --dry-run   # 先看要改什么
+node scripts/fix-mojibake.js             # 实际写库
+```
+
 ## 数据库切换
 
 ```bash

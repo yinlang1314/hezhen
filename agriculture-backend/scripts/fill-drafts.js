@@ -71,7 +71,7 @@ async function main() {
          suggestions = CASE WHEN COALESCE(suggestions,'[]') = '[]' THEN ? ELSE suggestions END,
          category = ?
        WHERE id = ?`,
-      [plan.symptom || '', plan.cause || '', plan.spread || '', plan.occurrence || '',
+      [cleanText(plan.symptom), cleanText(plan.cause), cleanText(plan.spread), cleanText(plan.occurrence),
        j(plan.prevention), j(plan.suggestions), cat, d.id]
     )
     done++
