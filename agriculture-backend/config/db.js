@@ -9,7 +9,8 @@ if (String(process.env.DB_DRIVER || 'sqlite').toLowerCase() === 'mysql') {
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '../agriculture.db');
+// DB_FILE 可指定其它数据库文件（用于空库冒烟测试/多实例），默认仍是 agriculture.db
+const DB_PATH = process.env.DB_FILE || path.join(__dirname, '../agriculture.db');
 
 // sqlite3 单例连接
 const db = new sqlite3.Database(DB_PATH, (err) => {
@@ -91,73 +92,20 @@ async function cleanupDuplicateHistories() {
   }
 }
 
+// ⚠️ 顺序不能反：必须先把所有表建好，再检查/补字段。
+// 全新库第一次启动时表还不存在，PRAGMA table_info 只会返回空集，
+// 早先的写法据此去 ALTER 一张不存在的表，直接 SQLITE_ERROR: no such table
 async function initTables() {
-  // 用户对 AI 诊断的纠错记录：既保留 AI 的原判断，也保留用户给出的正确答案
-  await dbRun(`CREATE TABLE IF NOT EXISTS corrections (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    history_id INTEGER,
-    user_id INTEGER,
-    ai_name TEXT,
-    correct_name TEXT,
-    plant_name TEXT,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // 给旧库补上历史记录缺失的详情字段（已存在则跳过）
-  // 登录日志：记录每次登录尝试（成功/失败、来源 IP、时间），用于排查“谁在猜密码”
-  await dbRun(`CREATE TABLE IF NOT EXISTS login_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    user_id INTEGER,
-    ip TEXT,
-    success INTEGER DEFAULT 0,
-    reason TEXT,
-    source TEXT,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // 用户意见反馈：以前只打日志，重启/轮转就丢了
-  await dbRun(`CREATE TABLE IF NOT EXISTS feedback (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    type TEXT,
-    content TEXT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
-  )`);
-
-  // 用户表补充管理员标记（后台是给管理员用的，普通注册用户不应能进）
-  const userCols = await dbAll('PRAGMA table_info(users)')
-  if (!userCols.some((c) => c.name === 'is_admin')) {
-    await dbRun('ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0')
-    console.log('🔧 users 表新增字段：is_admin')
-  }
-  if (!userCols.some((c) => c.name === 'nickname')) {
-    await dbRun('ALTER TABLE users ADD COLUMN nickname TEXT')
-    console.log('🔧 users 表新增字段：nickname')
-  }
-  if (!userCols.some((c) => c.name === 'avatar')) {
-    await dbRun('ALTER TABLE users ADD COLUMN avatar TEXT')
-    console.log('🔧 users 表新增字段：avatar')
-  }
-  if (!userCols.some((c) => c.name === 'pwd_changed_at')) {
-    await dbRun('ALTER TABLE users ADD COLUMN pwd_changed_at DATETIME')
-    console.log('🔧 users 表新增字段：pwd_changed_at（用于提示“仍在用初始密码”）')
-  }
-
-  const histCols = await dbAll('PRAGMA table_info(histories)')
-  const hasCol = (n) => histCols.some((c) => c.name === n)
-  for (const col of ['plant_name', 'image', 'ai_source', 'evidence', 'corrected']) {
-    if (!hasCol(col)) {
-      await dbRun('ALTER TABLE histories ADD COLUMN ' + col + ' TEXT')
-      console.log('🔧 histories 表新增字段：' + col)
-    }
-  }
-
+  // ---------- 1. 建表（全部幂等）----------
   await dbRun(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_admin INTEGER DEFAULT 0,
+    nickname TEXT,
+    avatar TEXT,
+    pwd_changed_at DATETIME
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS histories (
@@ -174,7 +122,12 @@ async function initTables() {
     medicines TEXT,
     suggestions TEXT,
     prevention TEXT,
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    plant_name TEXT,
+    image TEXT,
+    ai_source TEXT,
+    evidence TEXT,
+    corrected TEXT
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS collections (
@@ -187,6 +140,8 @@ async function initTables() {
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // verified / verify_source / verify_date：识别、百科、后台审核都按它们过滤，
+  // 之前只写在 MySQL 版 schema 里，SQLite 全新库缺列会直接报 no such column
   await dbRun(`CREATE TABLE IF NOT EXISTS diseases (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -203,7 +158,10 @@ async function initTables() {
     occurrence TEXT,
     medicines TEXT,
     suggestions TEXT,
-    prevention TEXT
+    prevention TEXT,
+    verified INTEGER NOT NULL DEFAULT 1,
+    verify_source TEXT,
+    verify_date TEXT
   )`);
 
   await dbRun(`CREATE TABLE IF NOT EXISTS warnings (
@@ -217,6 +175,78 @@ async function initTables() {
     is_new INTEGER DEFAULT 0,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  await dbRun(`CREATE TABLE IF NOT EXISTS corrections (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    history_id INTEGER,
+    user_id INTEGER,
+    ai_name TEXT,
+    correct_name TEXT,
+    plant_name TEXT,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await dbRun(`CREATE TABLE IF NOT EXISTS login_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    user_id INTEGER,
+    ip TEXT,
+    success INTEGER DEFAULT 0,
+    reason TEXT,
+    source TEXT,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  await dbRun(`CREATE TABLE IF NOT EXISTS feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    type TEXT,
+    content TEXT NOT NULL,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // ---------- 2. 老库补字段（表已存在，幂等）----------
+  const userCols = await dbAll('PRAGMA table_info(users)')
+  const userHas = (n) => userCols.some((c) => c.name === n)
+  if (!userHas('is_admin')) {
+    await dbRun('ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0')
+    console.log('🔧 users 表新增字段：is_admin')
+  }
+  if (!userHas('nickname')) {
+    await dbRun('ALTER TABLE users ADD COLUMN nickname TEXT')
+    console.log('🔧 users 表新增字段：nickname')
+  }
+  if (!userHas('avatar')) {
+    await dbRun('ALTER TABLE users ADD COLUMN avatar TEXT')
+    console.log('🔧 users 表新增字段：avatar')
+  }
+  if (!userHas('pwd_changed_at')) {
+    await dbRun('ALTER TABLE users ADD COLUMN pwd_changed_at DATETIME')
+    console.log('🔧 users 表新增字段：pwd_changed_at（用于提示“仍在用初始密码”）')
+  }
+
+  const histCols = await dbAll('PRAGMA table_info(histories)')
+  const histHas = (n) => histCols.some((c) => c.name === n)
+  for (const col of ['plant_name', 'image', 'ai_source', 'evidence', 'corrected']) {
+    if (!histHas(col)) {
+      await dbRun('ALTER TABLE histories ADD COLUMN ' + col + ' TEXT')
+      console.log('🔧 histories 表新增字段：' + col)
+    }
+  }
+
+  const disCols = await dbAll('PRAGMA table_info(diseases)')
+  const disHas = (n) => disCols.some((c) => c.name === n)
+  const disMigrations = [
+    ['verified', 'INTEGER NOT NULL DEFAULT 1'],
+    ['verify_source', 'TEXT'],
+    ['verify_date', 'TEXT']
+  ]
+  for (const [col, ddl] of disMigrations) {
+    if (!disHas(col)) {
+      await dbRun('ALTER TABLE diseases ADD COLUMN ' + col + ' ' + ddl)
+      console.log('🔧 diseases 表新增字段：' + col)
+    }
+  }
 
   // 常用查询字段建立索引（列表按用户和时间查，数据量大了差别明显）
   const indexes = [

@@ -9,6 +9,7 @@ const fs = require('fs')
 
 const BASE = process.argv[2] || 'http://127.0.0.1:3000'
 const DRIVER = process.argv[3] || 'mysql'
+const ADMIN_PWD = process.env.E2E_ADMIN_PASSWORD || 'Nong2026#SL'
 const results = []
 // 记录测试开始时的最大 id，结束时只删自己产生的行（测试可重复运行）
 const __MAXID__ = { corrections: 0, login_logs: 0 }
@@ -167,7 +168,7 @@ async function run() {
   const adminLogin = await fetch(BASE + '/admin/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ username: 'admin', password: 'Nong2026#SL' }),
+    body: new URLSearchParams({ username: 'admin', password: ADMIN_PWD }),
     redirect: 'manual'
   })
   const cookies = (adminLogin.headers.getSetCookie ? adminLogin.headers.getSetCookie() : [adminLogin.headers.get('set-cookie')])

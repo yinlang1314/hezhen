@@ -18,6 +18,15 @@
 
 ---
 
+## 环境要求
+
+| 项 | 要求 |
+|---|---|
+| Node.js | **18 / 20 / 22 LTS**（推荐 22；Node 26 等新版本可能没有 sqlite3 预编译包，会编译失败）|
+| npm | 随 Node 安装即可 |
+| 浏览器 | Chrome / Edge 最新版（H5 运行）|
+| HBuilderX | 仅编译前端/打 App 时需要 |
+
 ## 快速开始
 
 ```bash
@@ -55,6 +64,69 @@ cli launch mp-weixin --project <项目路径> --compile true
 # Android：HBuilderX → 发行 → 原生App-云打包
 # 注意：签名证书不要提交到仓库（已在 .gitignore 里排除）
 ```
+
+---
+
+## 常见问题
+
+### 1. `npm install` 失败 / sqlite3 编译报错
+
+仓库已内置 `agriculture-backend/.npmrc`（npmmirror 镜像 + sqlite3 预编译源）。仍失败时：
+
+```bash
+npm install --registry=https://registry.npmmirror.com
+# 仍不行就把 Node 降到 22 LTS 再装
+```
+
+### 2. PowerShell 报"在此系统上禁止运行脚本"
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+### 3. 双击 .bat 被 Windows"智能应用控制"拦截
+
+从网上下载的文件带 Mark-of-the-Web，未签名的 .bat 会被拦。不用双击，直接跑 .ps1：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start-all.ps1
+```
+
+（不建议关闭智能应用控制——关掉后想再开启需要重置 Windows。）
+
+### 4. 下载的 zip 解压后有两层同名文件夹
+
+GitHub 的源码包解压是 `hezhen-main/hezhen-main/...`。HBuilderX 要导入**内层**那个（里面有 `pages.json` 的目录）。
+
+### 5. 前端没自动启动（找不到 HBuilderX）
+
+`start-all.ps1` 会按「环境变量 → 常见安装目录 → 注册表」自动探测。装在别处就设一个环境变量：
+
+```powershell
+setx HBUILDERX_HOME "D:\你的路径\HBuilderX"
+```
+
+或直接在 HBuilderX 里打开项目 → 运行 → 运行到浏览器。
+
+### 6. 想重新初始化数据库
+
+```powershell
+Remove-Item agriculture.db, agriculture.db-wal, agriculture.db-shm -ErrorAction SilentlyContinue
+```
+
+重启后会按最新表结构自动建表（已支持全新空库初始化）。
+
+### 7. 启动日志提示"未配置密钥"
+
+识别会退化为本地模拟。在 `.env` 填 `DEEPSEEK_API_KEY` / `BAIDU_API_KEY` / `BAIDU_SECRET_KEY` 即可。
+
+### 8. 启动告警 `JWT_SECRET / SESSION_SECRET 未配置`
+
+本地调试可忽略；**上线必须配置**，否则任何人都能伪造 token。
+
+### 9. 空库启动时报 `no such table` / `no such column`
+
+已在 2026-11 修复（建表顺序 + diseases 三列）。如果用的是旧版本代码，更新到最新 main 即可。
 
 ---
 

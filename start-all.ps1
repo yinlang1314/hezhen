@@ -21,10 +21,35 @@ $h5 = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyCo
 if ($h5) {
   Write-Host "H5 开发服务器已在运行（端口 5173）" -ForegroundColor Yellow
 } else {
-  $cli = 'E:\wj\HBuilderX\cli.exe'
-  if (-not (Test-Path $cli)) {
-    Write-Host "未找到 HBuilderX，跳过前端启动（也可以直接用 HBuilderX 打开项目运行）" -ForegroundColor Yellow
+  # 自动探测 HBuilderX（不再写死某台电脑的路径）
+  $cli = $null
+  $candidates = @()
+  if ($env:HBUILDERX_HOME) { $candidates += (Join-Path $env:HBUILDERX_HOME 'cli.exe') }
+  foreach ($d in @('C:\Program Files\HBuilderX', 'C:\Program Files (x86)\HBuilderX',
+                   'D:\HBuilderX', 'E:\HBuilderX', 'F:\HBuilderX',
+                   'D:\yingyong\HBuilderX', 'E:\wj\HBuilderX',
+                   (Join-Path $env:LOCALAPPDATA 'Programs\HBuilderX'),
+                   (Join-Path $env:USERPROFILE 'HBuilderX'))) {
+    $candidates += (Join-Path $d 'cli.exe')
+  }
+  # 注册表里找安装目录（HBuilderX 卸载项）
+  foreach ($k in @('HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                   'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                   'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')) {
+    Get-ItemProperty $k -ErrorAction SilentlyContinue |
+      Where-Object { $_.DisplayName -match 'HBuilderX' -and $_.InstallLocation } |
+      ForEach-Object { $candidates += (Join-Path $_.InstallLocation 'cli.exe') }
+  }
+  foreach ($c in $candidates) {
+    if ($c -and (Test-Path $c)) { $cli = $c; break }
+  }
+
+  if (-not $cli) {
+    Write-Host "未找到 HBuilderX（cli.exe）。" -ForegroundColor Yellow
+    Write-Host "  前端不受影响：直接用 HBuilderX 打开项目 → 运行 → 运行到浏览器" -ForegroundColor Yellow
+    Write-Host "  或设置环境变量指定安装目录：HBUILDERX_HOME=D:\你的路径\HBuilderX" -ForegroundColor Yellow
   } else {
+    Write-Host ("HBuilderX: " + $cli)
     $hbx = Get-Process -Name HBuilderX -ErrorAction SilentlyContinue
     if (-not $hbx) {
       Write-Host "HBuilderX 未运行，正在启动..." -ForegroundColor Yellow
