@@ -63,6 +63,18 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 ---
 
+## 没装 HBuilderX？用现成的网页版
+
+仓库里带了**编译好的 H5 页面**（`dist/h5/`），装个 Node 就能看，不需要 HBuilderX：
+
+```text
+1. 先启动后端：cd agriculture-backend && npm start
+2. 再双击根目录的「启动网页.bat」
+3. 浏览器自动打开 http://localhost:5178
+```
+
+原理：`serve-h5.js` 是个零依赖静态服务器；页面里的接口地址会自动指向同一台机器的 3000 端口。
+
 ## 一键启动（**只需要点这一个**）
 
 | 文件 | 作用 |
