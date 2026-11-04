@@ -253,14 +253,14 @@ export default {
   font-size: 56rpx;
 }
 .hero-info { margin-left: 28rpx; flex: 1; display: flex; flex-direction: column; }
-.hero-name { font-size: 42rpx; font-weight: 800; color: #fff; letter-spacing: 1rpx; }
+.hero-name { font-size: 42rpx; font-weight: 800; color: #fff; letter-spacing: 0; }
 .hero-account { font-size: 24rpx; color: rgba(255, 255, 255, 0.85); margin-top: 10rpx; }
 .hero-deco { position: absolute; right: -20rpx; bottom: -20rpx; width: 160rpx; height: 160rpx; opacity: 0.12; }
 
 /* ---------- 数据 ---------- */
 .stat-card {
   display: flex; align-items: center;
-  margin: -36rpx 48rpx 0;
+  margin: -36rpx 32rpx 0;
   background: #fff; border-radius: var(--r-lg);
   box-shadow: 0 10rpx 30rpx rgba(15, 23, 42, 0.1);
   padding: 28rpx 0;
@@ -285,7 +285,7 @@ export default {
 }
 .menu-row:last-child { border-bottom: none; }
 .menu-row:active { background: #FAFCFB; }
-.menu-icon { width: 68rpx; height: 68rpx; flex-shrink: 0; }
+.menu-icon { width: 64rpx; height: 64rpx; flex-shrink: 0; }
 .menu-text { flex: 1; margin-left: 24rpx; font-size: 30rpx; color: var(--t-main); font-weight: 500; }
 .menu-arrow { font-size: 44rpx; color: #CBD5E1; line-height: 1; }
 
