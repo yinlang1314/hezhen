@@ -321,7 +321,10 @@ async function startServer() {
         if (ds && bd) return 'DeepSeek + 百度植物识别（真实 AI 识别）'
         if (ds) return '仅 DeepSeek（用大模型识图 + 判断病害）'
         if (bd) return '仅百度植物识别（病害按本地库匹配）'
-        return '未配置密钥 —— 识别会退化为「本地模拟」，请参考 agriculture-backend/.env.example 配置'
+        const demo = String(process.env.DEMO_MODE || '') === '1'
+        return demo
+          ? '未配置密钥 —— 当前 DEMO_MODE=1，识别会返回「演示数据」（明确标注非识别结果）'
+          : '未配置密钥 —— 识别功能会直接报错提示配置密钥（不再返回假结果）。填好 DEEPSEEK_API_KEY 后重启即可；只想看界面可设 DEMO_MODE=1'
       })())
       console.log(`🔧 管理后台：http://localhost:${PORT}/admin`)
     })
