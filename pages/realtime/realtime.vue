@@ -22,9 +22,15 @@
         <view class="result-card" v-if="result">
           <view class="rc-head">
             <text class="rc-name">{{ result.name }}</text>
-            <view class="rc-score" :class="{ low: (result.confidence || 0) < 60 }">
-              <text class="rc-num">{{ result.confidence }}</text>
-              <text class="rc-pct">%</text>
+            <view class="rc-right">
+              <view class="rc-score" :class="{ low: (result.confidence || 0) < 60 }">
+                <text class="rc-num">{{ result.confidence }}</text>
+                <text class="rc-pct">%</text>
+              </view>
+              <!-- 关掉结果卡：卡片会挡住画面，用户随时可以收起来 -->
+              <view class="rc-close" @click.stop="dismissResult" hover-class="rc-close-hover">
+                <text class="rc-close-x">×</text>
+              </view>
             </view>
           </view>
           <view class="rc-tags">
@@ -415,6 +421,14 @@ export default {
       // #endif
     },
 
+    // 关闭结果卡（不影响继续扫描）
+    dismissResult() {
+      this.result = null
+      this.advice = ''
+      this.status = 'idle'
+      this.hint = '已收起结果，画面有变化会继续自动识别'
+    },
+
     applyResult(d) {
       if (!d) return
       const nm = String(d.name || '').trim()
@@ -501,6 +515,25 @@ export default {
 .result-card.empty { border-color: rgba(148, 163, 184, .25); }
 .rc-empty { font-size: 26rpx; color: rgba(226, 232, 240, .7); }
 .rc-head { display: flex; align-items: center; justify-content: space-between; }
+.rc-right { display: flex; align-items: center; gap: 16rpx; }
+/* 关闭按钮：结果卡挡画面时随手收起 */
+.rc-close {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(15, 23, 42, .55);
+  border: 1rpx solid rgba(148, 163, 184, .35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rc-close-hover { background: rgba(15, 23, 42, .8); }
+.rc-close-x {
+  font-size: 36rpx;
+  line-height: 1;
+  color: #E2E8F0;
+  margin-top: -4rpx;
+}
 .rc-name { font-size: 40rpx; font-weight: 800; color: #F8FAFC; }
 .rc-score { display: flex; align-items: baseline; padding: 6rpx 18rpx; border-radius: 999rpx; background: rgba(16, 185, 129, .18); }
 .rc-score.low { background: rgba(245, 158, 11, .18); }
