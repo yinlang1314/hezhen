@@ -25,7 +25,9 @@ exports.getRisk = async (req, res) => {
   try {
     const [forecast, rules] = await Promise.all([
       getForecast(region),
-      dbAll('SELECT * FROM risk_rules WHERE enabled = 1')
+      dbAll(`SELECT r.* FROM risk_rules r
+         JOIN diseases d ON d.id = r.disease_id
+         WHERE r.enabled = 1 AND d.verified = 1`)
     ])
     const days = computeRisks(forecast.days, rules)
     res.json({
