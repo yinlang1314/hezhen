@@ -84,6 +84,30 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 // 注意：uploads 目录不能由静态中间件托管，否则会在下面的 /uploads 鉴权路由
 // 之前把图片直接发出去，访问控制就形同虚设。这里用一个包装中间件跳过它。
+// ==================================================================
+// 上传目录路径归一化（安全）
+//
+// 问题：/uploads 的鉴权中间件只认标准写法。
+//   //uploads/xxx.png    → 静态中间件自己把多重斜杠折叠后直接发文件
+//   /uploads%2Fxxx.png  → 单段路径，不匹配 app.use('/uploads')，落到静态目录
+// 两者都能绕过「只有本人/管理员能看识别记录图」的限制。
+// 处理：先解码 + 折叠斜杠，凡是指向 uploads 的请求都改写成标准路径，
+//       再交给后面的 /uploads 鉴权中间件；静态中间件永远不处理 uploads。
+// ==================================================================
+app.use((req, res, next) => {
+  const rawPath = String(req.url || '').split('?')[0]
+  let decoded
+  try { decoded = decodeURIComponent(rawPath) } catch (e) { return res.status(400).send('非法请求路径') }
+  const normalized = decoded.replace(/\\/g, '/').replace(/\/{2,}/g, '/')
+  if (/^\/uploads\//i.test(normalized)) {
+    const rest = normalized.slice('/uploads/'.length)
+    if (!rest || rest.indexOf('..') >= 0) return res.status(400).send('非法路径')
+    const query = req.url.indexOf('?') >= 0 ? req.url.slice(req.url.indexOf('?')) : ''
+    req.url = '/uploads/' + rest + query
+  }
+  next()
+})
+
 const staticHandler = express.static(path.join(__dirname, 'public'), { index: false })
 app.use((req, res, next) => {
   if (req.path.indexOf('/uploads/') === 0) return next()   // 交给后面的鉴权路由

@@ -87,23 +87,31 @@ async function run() {
   const arr = Array.isArray(listData) ? listData : (listData && listData.list) || []
   rec('百科列表', list.status === 200 && arr.length > 0, '返回 ' + arr.length + ' 条 · total=' + (listData && listData.total))
 
+  const badPage = await api('GET', '/api/disease/diseases/list?page=-1&pageSize=9999')
+  rec('分页参数防御(page=-1)', badPage.status === 200, 'HTTP ' + badPage.status)
+
   const search = await api('GET', '/api/disease/diseases/list?keyword=玉米&pageSize=5')
   rec('关键词搜索', search.status === 200 && search.json.code === 200)
 
   const detail = await api('GET', '/api/disease/detail?id=4')
   rec('病害详情', detail.json && detail.json.code === 200, detail.json && detail.json.data && detail.json.data.name)
 
+  // 下面三个是后台管理接口：匿名访问必须被挡住（2026-11-05 修复：原来没鉴权）
   const root = await api('GET', '/api/disease/')
-  rec('病害总览(/)', root.status === 200)
+  rec('管理接口·匿名拦截(/)', root.status === 401, 'HTTP ' + root.status)
 
   const news = await api('GET', '/api/disease/new')
-  rec('新增页(new)', news.status === 200)
+  rec('管理接口·匿名拦截(new)', news.status === 401, 'HTTP ' + news.status)
 
   const aifill = await api('GET', '/api/disease/ai-fill?name=水稻稻瘟病&limit=3')
-  rec('AI 补全(ai-fill)', aifill.status === 200)
+  rec('管理接口·匿名拦截(ai-fill)', aifill.status === 401, 'HTTP ' + aifill.status)
 
   // ---------- 3. 识别 ----------
-  const imgPath = path.join(__dirname, '..', 'public', 'uploads', 'disease-1792489223994-907565697.jpeg')
+  // 测试用的图片必须放在仓库里（public/images/seed），不能指向 uploads ——
+  // uploads 里的孤儿文件会被 clean-uploads 清掉，测试就会 ENOENT 崩掉。
+  const seedDir = path.join(__dirname, '..', 'public', 'images', 'seed')
+  const seedPick = (fs.readdirSync(seedDir).filter((f) => /\.(jpe?g|png)$/i.test(f))[0]) || ''
+  const imgPath = path.join(seedDir, seedPick)
   const img = fs.readFileSync(imgPath)
   const form = () => { const f = new FormData(); f.append('image', new Blob([img], { type: 'image/jpeg' }), 'test.jpg'); return f }
 

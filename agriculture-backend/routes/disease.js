@@ -7,6 +7,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const { dbRun, dbGet, dbAll, safeParseJSON } = require('../config/db');
 const rateLimit = require('../middleware/rateLimit');
+const requireAdmin = require('../middleware/requireAdmin');
 
 // ================== 核心配置 ==================
 // 不再写死后端 IP：图片统一返回相对地址（/uploads/xxx.jpg），
@@ -104,8 +105,9 @@ async function deleteFileIfExists(relativePath) {
 // 获取病虫害列表（支持分页 ?page=1&pageSize=10）
 router.get('/diseases/list', async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1
-    const pageSize = parseInt(req.query.pageSize) || 20
+    // 分页参数防御：负数/超大值/nan 都夹到合理范围，避免 SQL 报错或全表扫
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize, 10) || 20))
     const offset = (page - 1) * pageSize
     const keyword = req.query.keyword || ''
 
@@ -1335,9 +1337,13 @@ router.post('/correct',
     )
     const correctionId = (inserted && (inserted.insertId || inserted.lastID)) || null
 
-    // 修正对应的历史记录（如果这条记录存在且属于当前用户或没有归属）
+    // 修正对应的历史记录：只允许改「自己的」历史（防止越权改别人记录）
     let fixed = 0
     if (historyId) {
+      const owner = await dbGet('SELECT user_id FROM histories WHERE id = ?', [historyId])
+      if (owner && owner.user_id && userId && Number(owner.user_id) !== Number(userId)) {
+        return res.json({ code: 403, message: '这条记录不属于当前账号，无法修改' })
+      }
       // 注意：不能用 SQLite 的 || 拼接（MySQL 里是 OR），改成先读后拼
       const prev = await dbGet('SELECT ai_source FROM histories WHERE id = ?', [historyId])
       const mergedSource = String((prev && prev.ai_source) || '') + '（已人工纠正）'
@@ -1414,7 +1420,7 @@ const PAGE_SIZE = 15;
 const flashOf = (q) => ({ success: q.success, error: q.error });
 
 // 列表：搜索 + 分页
-router.get('/', async (req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const keyword = String(req.query.q || '').trim();
@@ -1468,7 +1474,7 @@ router.get('/', async (req, res) => {
 });
 
 // 新增页
-router.get('/new', (req, res) => {
+router.get('/new', requireAdmin, (req, res) => {
   res.render('admin/disease_form', {
     pageTitle: '新增病虫害', current: 'diseases', adminName: req.session.adminName || 'admin',
     isEdit: false, d: {}, medicinesText: '', suggestionsText: '', preventionText: '',
@@ -1477,7 +1483,7 @@ router.get('/new', (req, res) => {
 });
 
 // 编辑页
-router.get('/edit/:id', async (req, res) => {
+router.get('/edit/:id', requireAdmin, async (req, res) => {
   try {
     const disease = await dbGet('SELECT * FROM diseases WHERE id = ?', [req.params.id]);
     if (!disease) return res.redirect('/admin/diseases?error=病虫害不存在');
@@ -1515,7 +1521,7 @@ function parseMedicines(text) {
 }
 
 // AI 自动生成资料（后台表单里的「✨ AI 自动生成资料」按钮）
-router.get('/ai-fill', async (req, res) => {
+router.get('/ai-fill', requireAdmin, async (req, res) => {
   try {
     const name = String(req.query.name || '').trim();
     if (!name) return res.json({ code: 400, message: '请先填写病虫害名称' });
@@ -1546,7 +1552,7 @@ router.get('/ai-fill', async (req, res) => {
 });
 
 // 新增保存
-router.post('/add', upload.single('disease_image'), handleMulterError, [
+router.post('/add', requireAdmin, upload.single('disease_image'), handleMulterError, [
   body('name').notEmpty().withMessage('病虫害名称不能为空'),
   body('category').notEmpty().withMessage('所属分类不能为空'),
   body('symptom').notEmpty().withMessage('症状描述不能为空'),
@@ -1579,7 +1585,7 @@ router.post('/add', upload.single('disease_image'), handleMulterError, [
 });
 
 // 编辑保存
-router.post('/edit', upload.single('disease_image'), handleMulterError, [
+router.post('/edit', requireAdmin, upload.single('disease_image'), handleMulterError, [
   body('id').notEmpty(), body('name').notEmpty(), body('category').notEmpty(),
   body('symptom').notEmpty(), body('cause').notEmpty(), body('prevention').notEmpty()
 ], async (req, res) => {
@@ -1616,7 +1622,7 @@ router.post('/edit', upload.single('disease_image'), handleMulterError, [
 });
 
 // 删除（POST，带确认）
-router.post('/:id/delete', async (req, res) => {
+router.post('/:id/delete', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const record = await dbGet('SELECT image, name FROM diseases WHERE id = ?', [id]);
@@ -1634,7 +1640,7 @@ router.post('/:id/delete', async (req, res) => {
 // ---------- 后台页面：资料补全（预览 + 执行）----------
 // 注意：本文件在 /admin/diseases 下挂载时外层已有 checkAuth（见 admin.js），
 //      所以这个页面只有管理员能访问。
-router.get('/enrich', async (req, res) => {
+router.get('/enrich', requireAdmin, async (req, res) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 10, 30)
     const rows = await dbAll(
@@ -1661,7 +1667,7 @@ router.get('/enrich', async (req, res) => {
 })
 
 // ---------- 后台页面：执行补全 ----------
-router.post('/enrich/run', async (req, res) => {
+router.post('/enrich/run', requireAdmin, async (req, res) => {
   try {
     const limit = Math.min(Number((req.body && req.body.limit) || 3), 5)
     const data = await enrichDiseases({ limit, dryRun: false })
@@ -1682,7 +1688,7 @@ router.post('/enrich/run', async (req, res) => {
 //   POST /api/disease/enrich                    -> 自动挑最缺的几条
 //   POST /api/disease/enrich { ids:[1,2] }      -> 指定条目
 //   POST /api/disease/enrich { dryRun:true }    -> 只检查缺什么
-router.post('/enrich', rateLimit({ windowMs: 60 * 1000, max: 4, message: '补全太频繁，请稍后再试' }), async (req, res) => {
+router.post('/enrich', requireAdmin, rateLimit({ windowMs: 60 * 1000, max: 4, message: '补全太频繁，请稍后再试' }), async (req, res) => {
   try {
     const body = req.body || {}
     const data = await enrichDiseases({ ids: body.ids, limit: body.limit, dryRun: body.dryRun })
