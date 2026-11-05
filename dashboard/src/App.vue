@@ -32,42 +32,48 @@
   </div>
 
   <!-- ============ 已登录：左侧栏 + 顶栏 + 工作区 ============ -->
-  <div v-else class="layout">
+  <div v-else :class="['layout', { collapsed }]">
     <aside class="aside">
       <div class="aside-logo">
         <span class="mark">禾</span>
-        <span class="logo-text">禾诊数据平台</span>
+        <span class="logo-text" v-show="!collapsed">禾诊数据平台</span>
+        <button class="collapse-btn" :title="collapsed ? '展开侧栏' : '收起侧栏'" @click="toggleCollapse">
+          {{ collapsed ? '»' : '«' }}
+        </button>
       </div>
       <nav class="aside-nav">
         <div class="nav-group">分析</div>
         <a :class="['nav-item', { on: menu === 'overview' }]" @click="menu = 'overview'">
-          <span class="nav-ico">◎</span> 运营总览
+          <span class="nav-ico">◎</span><span v-show="!collapsed">运营总览</span>
         </a>
         <a :class="['nav-item', { on: menu === 'diseases' }]" @click="switchMenu('diseases')">
-          <span class="nav-ico">▤</span> 病虫害库
+          <span class="nav-ico">▤</span><span v-show="!collapsed">病虫害库</span>
         </a>
         <div class="nav-group">系统</div>
         <a class="nav-item" href="http://localhost:3000/admin" target="_blank">
-          <span class="nav-ico">↗</span> 管理后台
+          <span class="nav-ico">↗</span><span v-show="!collapsed">管理后台</span>
         </a>
       </nav>
       <div class="aside-user">
         <div class="avatar">{{ (who || 'A').slice(0, 1).toUpperCase() }}</div>
-        <div class="user-meta">
+        <div class="user-meta" v-show="!collapsed">
           <div class="user-name">{{ who }}</div>
           <div class="user-role">管理员</div>
         </div>
-        <a class="logout" @click="logout">退出</a>
+        <a class="logout" v-show="!collapsed" @click="logout">退出</a>
       </div>
     </aside>
 
     <div class="main">
       <header class="header">
         <div class="crumb">
-          <span>数据看板</span><i>/</i><strong>{{ menu === 'overview' ? '运营总览' : '病虫害库' }}</strong>
+          <a class="crumb-link" @click="switchMenu('overview')">数据看板</a>
+          <i>/</i>
+          <span class="crumb-cur">{{ menu === 'overview' ? '运营总览' : '病虫害库' }}</span>
         </div>
         <div class="header-right">
           <span class="updated" v-if="lastUpdated">更新于 {{ lastUpdated }}</span>
+          <el-button size="small" :loading="exporting" @click="exportImage">导出图片</el-button>
           <el-button size="small" :loading="loading" @click="loadAll">刷新数据</el-button>
         </div>
       </header>
@@ -192,6 +198,8 @@ const loading = ref(false)
 const who = ref(localStorage.getItem('dash_user') || 'admin')
 const menu = ref('overview')
 const lastUpdated = ref('')
+const collapsed = ref(false)          // 侧栏折叠
+const exporting = ref(false)          // 导出图片中
 
 const stats = ref({})
 const trendItems = ref([])
@@ -324,9 +332,48 @@ async function loadTable() {
   }
 }
 
+function toggleCollapse() {
+  collapsed.value = !collapsed.value
+  localStorage.setItem('dash_collapsed', collapsed.value ? '1' : '0')
+  // 折叠会改变图表容器宽度，重排一下
+  setTimeout(resizeAll, 260)
+}
+
 function switchMenu(key) {
   menu.value = key
   if (key === 'diseases' && !rows.value.length) loadTable()
+}
+
+// 导出当前工作区为 PNG（答辩贴 PPT / 发群都方便）
+async function exportImage() {
+  if (exporting.value) return
+  exporting.value = true
+  const el = document.querySelector('.workspace')
+  const prevBg = el ? el.style.background : ''
+  try {
+    const { default: html2canvas } = await import('html2canvas')
+    if (el) el.style.background = '#f1f5f9'   // 截图时补上底色，避免透明
+    const canvas = await html2canvas(el, {
+      backgroundColor: '#f1f5f9',
+      scale: 2,                 // 2 倍图，贴 PPT 不糊
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY
+    })
+    const url = canvas.toDataURL('image/png')
+    const a = document.createElement('a')
+    const stamp = new Date().toISOString().slice(0, 10)
+    a.href = url
+    a.download = '禾诊数据看板-' + stamp + '.png'
+    a.click()
+    ElMessage.success('截图已下载')
+  } catch (e) {
+    ElMessage.error('导出失败：' + (e.message || e))
+  } finally {
+    if (el) el.style.background = prevBg
+    exporting.value = false
+  }
 }
 
 function onTableSearch({ keyword, filter }) {
@@ -400,9 +447,22 @@ function resizeAll() { charts.forEach((c) => c && c.resize()) }
 watch(menu, (v) => { if (v === 'overview') nextTick(renderCharts) })
 
 onMounted(async () => {
+  const saved = localStorage.getItem('dash_collapsed')
+  collapsed.value = saved === '1' || window.innerWidth < 1100
+  window.addEventListener('resize', autoCollapse)
   if (token.value) { await loadAll(); await loadTable() }
 })
-onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
+
+// 窗口宽度变化：窄屏自动折叠（手动状态优先保存过的不覆盖）
+function autoCollapse() {
+  if (window.innerWidth < 1100) collapsed.value = true
+  else if (localStorage.getItem('dash_collapsed') !== '1') collapsed.value = false
+  setTimeout(resizeAll, 260)
+}
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', resizeAll)
+  window.removeEventListener('resize', autoCollapse)
+})
 </script>
 
 <style scoped>
@@ -438,11 +498,24 @@ onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
 
 /* ================= 主框架 ================= */
 .layout { display: flex; height: 100vh; }
+.layout.collapsed .aside { width: 64px; }
+.layout.collapsed .aside-logo { justify-content: center; padding: 0 8px 16px; }
+.layout.collapsed .collapse-btn { position: absolute; right: -10px; bottom: -10px; z-index: 2; }
+.layout.collapsed .nav-group { text-align: center; padding: 10px 0 4px; font-size: 10px; }
+.layout.collapsed .nav-item { justify-content: center; padding: 10px 0; }
+.layout.collapsed .aside-user { justify-content: center; padding: 12px 4px 4px; }
+.aside { transition: width .22s ease; }
+
 .aside {
   width: 216px; flex-shrink: 0; background: var(--aside); color: #cbd5e1;
   display: flex; flex-direction: column; padding: 18px 0 12px;
 }
-.aside-logo { display: flex; align-items: center; gap: 10px; padding: 0 18px 18px; border-bottom: 1px solid #1e293b; }
+.aside-logo { display: flex; align-items: center; gap: 10px; padding: 0 14px 16px; border-bottom: 1px solid #1e293b; position: relative; }
+.collapse-btn {
+  margin-left: auto; width: 22px; height: 22px; border-radius: 4px; cursor: pointer;
+  background: #1e293b; color: #94a3b8; border: 1px solid #334155; font-size: 12px; line-height: 1;
+}
+.collapse-btn:hover { color: #e2e8f0; border-color: #475569; }
 .aside-logo .mark {
   width: 28px; height: 28px; border-radius: 6px; background: #0f766e; color: #fff;
   display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;
@@ -473,7 +546,9 @@ onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
 }
 .crumb { font-size: 12.5px; color: #94a3b8; display: flex; gap: 8px; align-items: center; }
 .crumb i { font-style: normal; color: #cbd5e1; }
-.crumb strong { color: #0f172a; font-weight: 600; }
+.crumb-link { color: #94a3b8; cursor: pointer; text-decoration: none; }
+.crumb-link:hover { color: #0f766e; }
+.crumb-cur { color: #0f172a; font-weight: 600; }
 .header-right { display: flex; align-items: center; gap: 12px; }
 .updated { font-size: 12px; color: #94a3b8; }
 
