@@ -422,7 +422,8 @@ async function startServer() {
       printLanUrls(PORT)
       console.log('🔑 密钥读取情况：DEEPSEEK_API_KEY ' + (process.env.DEEPSEEK_API_KEY ? '已读取' : '未读取') +
         ' ｜ BAIDU_API_KEY ' + (process.env.BAIDU_API_KEY ? '已读取' : '未读取') +
-        ' ｜ BAIDU_SECRET_KEY ' + (process.env.BAIDU_SECRET_KEY ? '已读取' : '未读取'))
+        ' ｜ BAIDU_SECRET_KEY ' + (process.env.BAIDU_SECRET_KEY ? '已读取' : '未读取') +
+        ' ｜ 微信登录 ' + (process.env.WX_SECRET ? '已配置' : '未配置'))
       console.log('🤖 AI 识别状态：' + (() => {
         const ds = !!process.env.DEEPSEEK_API_KEY
         const bd = !!(process.env.BAIDU_API_KEY && process.env.BAIDU_SECRET_KEY)
