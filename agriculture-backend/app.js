@@ -114,6 +114,16 @@ function optionalAuth(req, res, next) {
 // 路由挂载
 const adminRouter = require('./routes/admin')
 app.use('/admin', adminRouter)
+// 版本信息：App 启动时比对本地 versionCode，决定是否提示更新
+app.get('/api/version', (req, res) => {
+  try {
+    const info = require('./version.json')
+    res.json({ code: 200, data: info })
+  } catch (e) {
+    res.json({ code: 500, message: '版本信息读取失败' })
+  }
+})
+
 app.use('/api/disease', require('./routes/disease'))
 app.use('/api/user', require('./routes/user'))
 app.use('/api/history', require('./routes/history'))

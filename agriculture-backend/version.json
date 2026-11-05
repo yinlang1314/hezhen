@@ -1,0 +1,12 @@
+{
+  "android": {
+    "versionName": "1.0.1",
+    "versionCode": 101,
+    "url": "https://github.com/yinlang1314/hezhen/raw/main/dist/apk/hezhen-v1.0.1.apk",
+    "notes": "实时监测可关闭结果卡、天气风险预警、纠错复核闭环"
+  },
+  "web": {
+    "versionName": "1.0.1",
+    "notes": "随仓库更新，无需单独下载"
+  }
+}

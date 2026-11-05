@@ -129,6 +129,10 @@
         <image class="collect-btn-icon" :src="isCollected ? '/static/icons/heart-on.png' : '/static/icons/heart-off.png'" mode="aspectFit" />
         <text class="collect-btn-text">{{ isCollected ? '已收藏' : '收藏' }}</text>
       </view>
+      <view class="share-action" @click="shareDisease">
+        <text class="share-icon">↗</text>
+        <text class="share-text">分享</text>
+      </view>
       <button class="identify-btn" @click="goToIdentify">{{ failed ? '重新识别' : '立即识别' }}</button>
     </view>
   </view>
@@ -224,7 +228,75 @@ export default {
     cleanOccurrence() { return this.cleanText(this.disease && this.disease.occurrence) },
   },
 
+  // ===== 分享 =====
+  // 小程序：右上角菜单 / 分享按钮都能转发
+  onShareAppMessage() {
+    return this.buildShare()
+  },
+  onShareTimeline() {
+    const d = this.disease || {}
+    return { title: this.shareTitle(), query: 'id=' + (this.diseaseId || d.id || '') }
+  },
+
   methods: {
+    shareTitle() {
+      const d = this.disease || {}
+      const name = d.name || '病虫害详情'
+      const host = d.host ? d.host + ' · ' : ''
+      return host + name + '｜禾诊 · 病虫害识别'
+    },
+
+    buildShare() {
+      const d = this.disease || {}
+      const id = this.diseaseId || d.id || ''
+      return {
+        title: this.shareTitle(),
+        path: '/pages/encyclopedia-detail/encyclopedia-detail?id=' + id,
+        imageUrl: d.image ? imageUrl(d.image) : ''
+      }
+    },
+
+    async shareDisease() {
+      // #ifdef MP-WEIXIN
+      // 小程序没有主动调起转发面板的 API，提示用右上角
+      uni.showToast({ title: '点右上角「···」→ 转发', icon: 'none', duration: 2500 })
+      return
+      // #endif
+
+      // #ifdef H5
+      const d = this.disease || {}
+      const url = location.origin + location.pathname + '#/pages/encyclopedia-detail/encyclopedia-detail?id=' + (this.diseaseId || d.id || '')
+      const data = { title: this.shareTitle(), text: '我在禾诊上查到的病虫害资料', url }
+      // 注意：桌面 Chrome 也有 navigator.share，但调用后可能一直不返回（没有系统面板），
+      // 所以只给移动端用，并且加超时兜底，别让按钮点了没反应。
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      if (navigator.share && isMobile) {
+        try {
+          await Promise.race([
+            navigator.share(data),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('share-timeout')), 2500))
+          ])
+          return
+        } catch (e) {
+          if (e && e.name === 'AbortError') return
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url)
+        uni.showToast({ title: '链接已复制，发给别人即可', icon: 'none', duration: 2500 })
+      } catch (e) {
+        uni.showModal({ title: '复制链接', content: url, showCancel: false })
+      }
+      // #endif
+
+      // #ifdef APP-PLUS
+      uni.setClipboardData({
+        data: 'https://github.com/yinlang1314/hezhen',
+        success: () => uni.showToast({ title: '已复制下载地址', icon: 'none' })
+      })
+      // #endif
+    },
+
     // 去掉 AI 诊断过程留下的标记段落
     cleanText(t) {
       return String(t == null ? '' : t)
@@ -405,6 +477,25 @@ export default {
 
 <style scoped>
 
+/* 分享按钮（底部栏） */
+.share-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 22rpx;
+  min-width: 88rpx;
+}
+.share-icon {
+  font-size: 40rpx;
+  line-height: 1;
+  color: #475569;
+}
+.share-text {
+  font-size: 20rpx;
+  color: #64748B;
+  margin-top: 4rpx;
+}
 .name-row {
   display: flex;
   align-items: center;

@@ -482,6 +482,49 @@ export default {
       }, 'image/jpeg', 0.9)
     },
 
+
+    // 上传前压缩：手机拍的原图动辄 3~5MB，压缩后通常 200~400KB，
+    // 网络差时上传成功率高很多，AI 识别准确率不受影响（本来就会缩到 1280）
+    compressPath(path) {
+      // #ifndef H5
+      return new Promise((resolve) => {
+        uni.compressImage({
+          src: path,
+          quality: 80,
+          success: (r) => resolve(r.tempFilePath || path),
+          fail: () => resolve(path)     // 压缩失败就用原图，不阻断流程
+        })
+      })
+      // #endif
+
+      // #ifdef H5
+      return new Promise((resolve) => {
+        if (typeof path !== 'string' || path.indexOf('blob:') === 0 || path.indexOf('data:') === 0 && path.length < 200000) {
+          resolve(path)
+          return
+        }
+        const img = new Image()
+        img.onload = () => {
+          try {
+            const maxSide = 1280
+            const scale = Math.min(1, maxSide / Math.max(img.width, img.height))
+            const w = Math.round(img.width * scale)
+            const h = Math.round(img.height * scale)
+            const cv = document.createElement('canvas')
+            cv.width = w
+            cv.height = h
+            cv.getContext('2d').drawImage(img, 0, 0, w, h)
+            cv.toBlob((blob) => {
+              resolve(blob ? URL.createObjectURL(blob) : path)
+            }, 'image/jpeg', 0.85)
+          } catch (e) { resolve(path) }
+        }
+        img.onerror = () => resolve(path)
+        img.src = path
+      })
+      // #endif
+    },
+
     chooseFromAlbum() {
       // 连拍模式下相册可一次多选（最多选到 batchMax 张）
       const maxPick = this.batchMode ? (this.batchMax - this.batchImages.length) : 1
@@ -489,8 +532,11 @@ export default {
         count: maxPick > 0 ? maxPick : 1,
         sourceType: ['album'],
         sizeType: ['compressed'],
-        success: (res) => {
-          const paths = res.tempFilePaths || []
+        success: async (res) => {
+          const raw = res.tempFilePaths || []
+          // 先压缩再走识别流程（大图上传慢、弱网易失败）
+          const paths = []
+          for (const rp of raw) paths.push(await this.compressPath(rp))
           if (!this.batchMode) {
             this.imageSrc = paths[0]
             this.startRecognize()

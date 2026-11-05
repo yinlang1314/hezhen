@@ -22,6 +22,15 @@
       <text class="pwd-tip">修改后请用新密码登录。如果这个账号是管理员，同一个密码也能登录管理后台。</text>
     </view>
 
+    <view class="group-title">关于</view>
+    <view class="setting-list">
+      <view class="setting-item" @click="checkUpdate">
+        <text class="setting-label">{{ checking ? '正在检查…' : '检查更新' }}</text>
+        <text class="setting-value">v{{ appVersion || '—' }}</text>
+        <text class="setting-arrow">›</text>
+      </view>
+    </view>
+
     <view class="group-title">服务器连接</view>
     <view class="setting-list">
       <view class="setting-item" @click="toggleServer">
@@ -90,6 +99,8 @@ export default {
   components: { NavBar },
   data() {
     return {
+      checking: false,
+      appVersion: '',
       darkMode: false,
       fontSizeIndex: 1,
       fontSizes: ['小', '中', '大'],
@@ -108,6 +119,7 @@ export default {
     }
   },
   onLoad() {
+    try { this.appVersion = uni.getSystemInfoSync().appVersion || '' } catch (e) {}
     
 // 读取本地设置
     this.darkMode = uni.getStorageSync('darkMode') || false
@@ -123,6 +135,48 @@ export default {
     // 使用 token 进行安全校验
       },
   methods: {
+    // 检查更新：比对后端版本号和本地版本号
+    async checkUpdate() {
+      if (this.checking) return
+      this.checking = true
+      try {
+        const res = await api.getVersion()
+        const latest = (res && res.data && res.data.android) || {}
+        const sys = uni.getSystemInfoSync()
+        const localCode = Number(sys.appVersionCode || 0)
+        const latestCode = Number(latest.versionCode || 0)
+
+        // #ifndef APP-PLUS
+        uni.showModal({
+          title: '当前版本',
+          content: '网页版 / 小程序随服务器更新，无需单独安装。最新 Android 版本：' + (latest.versionName || '—'),
+          showCancel: false
+        })
+        return
+        // #endif
+
+        if (latestCode && latestCode > localCode) {
+          uni.showModal({
+            title: '发现新版本 ' + (latest.versionName || ''),
+            content: (latest.notes || '') + '\n\n是否下载安装？',
+            confirmText: '去下载',
+            success: (r) => {
+              if (r.confirm && latest.url) {
+                // 用系统浏览器打开下载页
+                plus.runtime.openURL(latest.url)
+              }
+            }
+          })
+        } else {
+          uni.showToast({ title: '已是最新版本', icon: 'success' })
+        }
+      } catch (e) {
+        uni.showToast({ title: '检查失败，请确认后端已启动', icon: 'none' })
+      } finally {
+        this.checking = false
+      }
+    },
+
     openPwd() {
       this.showPwd = !this.showPwd
       this.oldPwd = ''
