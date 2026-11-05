@@ -75,6 +75,9 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 原理：`serve-h5.js` 是个零依赖静态服务器；页面里的接口地址会自动指向同一台机器的 3000 端口。
 
+> 「一键启动.bat」也会自动判断：装没装 HBuilderX 都能起前端——
+> 有 HBuilderX 走 5173 开发服务器；没有就自动用 dist/h5 起 5178 静态版。
+
 ## 一键启动（**只需要点这一个**）
 
 | 文件 | 作用 |

@@ -86,11 +86,14 @@ if ($listener) {
 }
 
 # ==================== 2. 前端 ====================
-$h5 = Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue
-if ($h5) {
+$h5Url = ''
+
+# 2.1 已经有开发服务器（HBuilderX 起的 5173）
+if (Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue) {
   Write-Host 'H5 开发服务器已在运行（端口 5173）' -ForegroundColor Yellow
+  $h5Url = 'http://localhost:5173'
 } else {
-  # 自动探测 HBuilderX（不能用 Join-Path 拼不存在的盘符）
+  # 2.2 自动探测 HBuilderX（不能用 Join-Path 拼不存在的盘符）
   $cli = $null
   $candidates = @()
   if ($env:HBUILDERX_HOME) { $candidates += ($env:HBUILDERX_HOME.TrimEnd('\') + '\cli.exe') }
@@ -103,11 +106,7 @@ if ($h5) {
   }
   foreach ($c in $candidates) { if ($c -and (Test-Path $c)) { $cli = $c; break } }
 
-  if (-not $cli) {
-    Write-Host '未找到 HBuilderX（cli.exe）。' -ForegroundColor Yellow
-    Write-Host '  前端可手动启动：HBuilderX 打开项目 → 运行 → 运行到浏览器' -ForegroundColor Yellow
-    Write-Host '  或设置环境变量：setx HBUILDERX_HOME "D:\你的路径\HBuilderX"' -ForegroundColor Yellow
-  } else {
+  if ($cli) {
     Write-Host ('HBuilderX: ' + $cli)
     if (-not (Get-Process -Name HBuilderX -ErrorAction SilentlyContinue)) {
       Write-Host 'HBuilderX 未运行，正在打开...' -ForegroundColor Yellow
@@ -121,9 +120,36 @@ if ($h5) {
       if (Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue) { break }
     }
     if (Get-NetTCPConnection -LocalPort 5173 -State Listen -ErrorAction SilentlyContinue) {
+      $h5Url = 'http://localhost:5173'
       Write-Host 'H5 已启动: http://localhost:5173' -ForegroundColor Green
+    }
+  }
+
+  # 2.3 没有 HBuilderX（或没起来）→ 用内置静态网页兜底
+  if (-not $h5Url) {
+    $h5Index = Join-Path $here 'dist\h5\index.html'
+    $serveJs = Join-Path $here 'serve-h5.js'
+    if ((Test-Path $h5Index) -and (Test-Path $serveJs) -and (Get-Command node -ErrorAction SilentlyContinue)) {
+      Write-Host '没有 HBuilderX，改用仓库里编译好的网页（端口 5178）...' -ForegroundColor Yellow
+      $staticLogDir = Join-Path $here 'agriculture-backend\logs'
+      if (-not (Test-Path $staticLogDir)) { New-Item -ItemType Directory -Path $staticLogDir | Out-Null }
+      $staticLog = Join-Path $staticLogDir 'serve-h5.log'
+      Start-Process -FilePath 'node' -ArgumentList @('serve-h5.js','5178') -WorkingDirectory $here -WindowStyle Hidden -RedirectStandardOutput $staticLog -RedirectStandardError ($staticLog + '.err')
+      Write-Host ('静态网页日志: ' + $staticLog)
+      for ($i = 0; $i -lt 8; $i++) {
+        Start-Sleep -Seconds 1
+        try { $r = Invoke-WebRequest 'http://127.0.0.1:5178/' -UseBasicParsing -TimeoutSec 2; if ($r.StatusCode -eq 200) { $h5Url = 'http://localhost:5178'; break } } catch {}
+      }
+      if ($h5Url) {
+        Write-Host '网页已启动: http://localhost:5178（静态版，改代码后需要重新编译）' -ForegroundColor Green
+      } else {
+        Write-Host '静态网页也没起来，可手动双击「启动网页.bat」' -ForegroundColor Yellow
+      }
     } else {
-      Write-Host '前端 60 秒内没起来，可手动在 HBuilderX 点「运行到浏览器」' -ForegroundColor Yellow
+      Write-Host '未找到 HBuilderX，也没有现成的网页产物。' -ForegroundColor Yellow
+      Write-Host '  方式一：装 HBuilderX，打开项目 → 运行到浏览器' -ForegroundColor Yellow
+      Write-Host '  方式二：在有 HBuilderX 的机器上编译出 dist/h5 后拷过来，双击「启动网页.bat」' -ForegroundColor Yellow
+      Write-Host '  方式三：setx HBUILDERX_HOME "D:\你的路径\HBuilderX"' -ForegroundColor Yellow
     }
   }
 }
@@ -131,12 +157,13 @@ if ($h5) {
 # ==================== 3. 地址 ====================
 if (-not $NoBrowser) {
   Start-Sleep -Seconds 1
-  Start-Process 'http://localhost:5173'
+  if ($h5Url) { Start-Process $h5Url }
   Start-Process 'http://localhost:3000/admin'
 }
 Write-Host ''
 Write-Host '地址汇总:' -ForegroundColor Cyan
-Write-Host '  前端 H5   http://localhost:5173'
+if ($h5Url) { Write-Host ('  前端网页  ' + $h5Url) }
+else { Write-Host '  前端网页  未启动（见上方提示）' -ForegroundColor DarkYellow }
 Write-Host '  后端接口  http://localhost:3000/api/health'
 Write-Host '  管理后台  http://localhost:3000/admin'
-Write-Host '  手机访问  http://<本机IP>:5173（需与手机同一 Wi-Fi）'
+Write-Host '  手机访问  用上面的端口 + 本机局域网 IP（需与手机同一 Wi-Fi）'
