@@ -48,15 +48,25 @@
 
   <div class="card">
     <div class="table-wrap">
-      <table>
+      <form method="post" action="/admin/diseases/batch-verify" id="batchForm">
+      <div class="batch-bar" style="display:flex;align-items:center;gap:12px;margin:0 0 10px;font-size:13px;color:#475569">
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+          <input type="checkbox" id="checkAll" onchange="toggleAll(this)"> 全选本页
+        </label>
+        <button class="btn btn-primary btn-sm" type="submit" onclick="return confirmBatch()">批量核实选中的</button>
+        <span style="color:#94a3b8">只会核实填了「数据来源」的条目，没来源的自动跳过</span>
+        <span style="color:#b45309">· 来源只证明名录里有这个病，正文质量请自己看过再点</span>
+      </div>
+    <table>
         <thead>
-          <tr><th style="width:60px">图片</th><th style="width:70px">状态</th><th>名称</th><th>分类</th><th>类型</th><th>危害等级</th><th>来源</th><th>症状摘要</th><th style="text-align:right">操作</th></tr>
+          <tr><th style="width:36px"></th><th style="width:60px">图片</th><th style="width:70px">状态</th><th>名称</th><th>分类</th><th>类型</th><th>危害等级</th><th>来源</th><th>症状摘要</th><th style="text-align:right">操作</th></tr>
         </thead>
         <tbody>
           <% if (!rows.length) { %>
-            <tr><td colspan="9" class="empty-row">没有找到病虫害数据</td></tr>
+            <tr><td colspan="10" class="empty-row">没有找到病虫害数据</td></tr>
           <% } else { rows.forEach(function (d) { %>
             <tr>
+              <td><input type="checkbox" name="ids" value="<%= d.id %>" class="row-check" <%= d.verified ? 'disabled' : '' %>></td>
               <td>
                 <% if (d.image) { %>
                   <img class="thumb" src="<%= String(d.image).replace(/^https?:\/\/[^/]+/, '') %>" alt="">
@@ -112,6 +122,17 @@
         </tbody>
       </table>
     </div>
+    </form>
+    <script>
+      function toggleAll(box) {
+        document.querySelectorAll('.row-check:not(:disabled)').forEach(function (c) { c.checked = box.checked })
+      }
+      function confirmBatch() {
+        var n = document.querySelectorAll('.row-check:checked').length
+        if (!n) { alert('请先勾选要核实的条目'); return false }
+        return confirm('确定把选中的 ' + n + ' 条标为「已核实」吗？\n核实后 App 里立刻可见。')
+      }
+    </script>
     <% if (totalPages > 1) { %>
     <div class="pager">
       <% if (page > 1) { %><a href="/admin/diseases?page=<%= page - 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= status ? '&status=' + status : '' %>">‹ 上一页</a><% } %>

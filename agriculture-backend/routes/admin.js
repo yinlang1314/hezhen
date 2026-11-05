@@ -539,6 +539,33 @@ router.get('/corrections', checkAuth, async (req, res) => {
   }
 });
 
+// 批量核实：只处理"有数据来源"的条目，没来源的一律跳过并报数
+router.post('/diseases/batch-verify', checkAuth, async (req, res) => {
+  try {
+    let ids = req.body.ids || []
+    if (!Array.isArray(ids)) ids = [ids]
+    ids = ids.map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n))
+    if (!ids.length) return res.redirect('/admin/diseases?error=' + encodeURIComponent('没有选中任何条目'))
+
+    const marks = ids.map(() => '?').join(',')
+    const rows = await dbAll('SELECT id, name, verify_source FROM diseases WHERE id IN (' + marks + ')', ids)
+    const okIds = rows.filter((r) => String(r.verify_source || '').trim()).map((r) => r.id)
+    const skipped = rows.length - okIds.length
+    const today = new Date().toISOString().slice(0, 10)
+
+    if (okIds.length) {
+      const m2 = okIds.map(() => '?').join(',')
+      await dbRun("UPDATE diseases SET verified = 1, verify_date = COALESCE(NULLIF(verify_date, ''), ?), category = REPLACE(category, '（AI草稿）', '') WHERE id IN (" + m2 + ')', [today].concat(okIds))
+    }
+
+    let msg = '已核实 ' + okIds.length + ' 条'
+    if (skipped) msg += '，跳过 ' + skipped + ' 条（没填数据来源，不能上线）'
+    res.redirect('/admin/diseases?success=' + encodeURIComponent(msg))
+  } catch (e) {
+    res.redirect('/admin/diseases?error=' + encodeURIComponent(String(e.message)))
+  }
+})
+
 // 复核：通过（把对应病害标为已核实）/ 驳回
 router.post('/corrections/:id/review', checkAuth, async (req, res) => {
   const id = parseInt(req.params.id)
