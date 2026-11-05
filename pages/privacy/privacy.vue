@@ -3,7 +3,7 @@
     <NavBar title="隐私政策" />
     <scroll-view scroll-y class="doc-scroll">
       <view class="doc">
-        <text class="doc-updated">更新日期：2026-11-05　生效日期：2026-11-05</text>
+        <text class="doc-updated">更新日期：{{ updatedAt }}　生效日期：{{ updatedAt }}</text>
         <text class="doc-h">一、我们收集哪些信息</text>
         <text class="doc-p">1. 账号信息：用户名、密码（加密存储，我们看不到明文）。</text>
         <text class="doc-p">2. 资料信息：你自愿填写的昵称、头像。</text>
@@ -46,7 +46,7 @@
         <text class="doc-p">本政策更新后会在本页公布并更新日期。</text>
 
         <text class="doc-h">十、联系方式</text>
-        <text class="doc-p">隐私相关问题：可通过项目仓库 Issues 提交（GitHub: yinlang1314/hezhen）。</text>
+        <text class="doc-p">隐私相关问题，可发送邮件至 {{ contactEmail }}，或在项目仓库提交 Issue：{{ contactGithub }}</text>
 
         <view class="doc-end"></view>
 
@@ -57,7 +57,11 @@
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import { CONTACT_EMAIL, CONTACT_GITHUB, UPDATED_AT } from '@/utils/legal.js'
 export default {
+  data() {
+    return { contactEmail: CONTACT_EMAIL, contactGithub: CONTACT_GITHUB, updatedAt: UPDATED_AT }
+  },
   components: { NavBar }
 }
 </script>

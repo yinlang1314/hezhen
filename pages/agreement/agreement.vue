@@ -3,7 +3,7 @@
     <NavBar title="用户协议" />
     <scroll-view scroll-y class="doc-scroll">
       <view class="doc">
-        <text class="doc-updated">更新日期：2026-11-05　生效日期：2026-11-05</text>
+        <text class="doc-updated">更新日期：{{ updatedAt }}　生效日期：{{ updatedAt }}</text>
 
         <text class="doc-h">一、关于本协议</text>
         <text class="doc-p">「禾诊」是一款面向农户的病虫害识别与防治参考工具（以下简称"本应用"）。本应用由个人开发者维护，用于学习与农业生产辅助，不提供任何形式的商业担保。</text>
@@ -41,7 +41,7 @@
         <text class="doc-p">协议更新后会在本页公布并更新日期。继续使用即视为接受修改后的协议。</text>
 
         <text class="doc-h">九、联系方式</text>
-        <text class="doc-p">问题、建议或投诉：可通过项目仓库的 Issues 提交（GitHub: yinlang1314/hezhen）。</text>
+        <text class="doc-p">问题、建议或投诉，可发送邮件至 {{ contactEmail }}，或在项目仓库提交 Issue：{{ contactGithub }}</text>
 
         <view class="doc-end"></view>
       </view>
@@ -51,7 +51,11 @@
 
 <script>
 import NavBar from '@/components/NavBar.vue'
+import { CONTACT_EMAIL, CONTACT_GITHUB, UPDATED_AT } from '@/utils/legal.js'
 export default {
+  data() {
+    return { contactEmail: CONTACT_EMAIL, contactGithub: CONTACT_GITHUB, updatedAt: UPDATED_AT }
+  },
   components: { NavBar }
 }
 </script>
