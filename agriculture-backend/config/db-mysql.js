@@ -192,6 +192,9 @@ async function initDB() {
   const p = getPool()
   for (const ddl of TABLE_DDL) await p.query(ddl)
   console.log('✅ 数据库表初始化完成 (MySQL)')
+
+  // 结构升级：基于 TABLE_DDL 之后，跑 migrations/ 里没执行过的迁移
+  await require('../lib/migrate').runMigrations({ run: dbRun, all: dbAll, dialect: 'mysql' })
   return p
 }
 

@@ -49,6 +49,9 @@ const dbAll = (sql, params = []) =>
 
 async function initDB() {
   await initTables();
+
+  // 结构升级：initTables() 是"第一版基线"，后续改动都写在 migrations/ 里
+  await require('../lib/migrate').runMigrations({ run: dbRun, all: dbAll, dialect: 'sqlite' });
   console.log('✅ 数据库表初始化完成');
   return db;
 }

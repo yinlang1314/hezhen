@@ -204,6 +204,18 @@ node scripts/fix-mojibake.js --dry-run   # 先看要改什么
 node scripts/fix-mojibake.js             # 实际写库
 ```
 
+## 数据库升级（迁移）
+
+改表结构不要再改 `initTables()`，新建一个迁移文件即可，启动时自动执行：
+
+```bash
+cd agriculture-backend
+npm run migrate        # 查看待执行的迁移
+npm run migrate:up     # 手动执行（平时启动会自动跑）
+```
+
+详细写法看 [`agriculture-backend/migrations/README.md`](agriculture-backend/migrations/README.md)。
+
 ## 数据库切换
 
 ```bash
