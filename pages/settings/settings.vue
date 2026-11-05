@@ -24,6 +24,16 @@
 
     <view class="group-title">关于</view>
     <view class="setting-list">
+      <view class="setting-item" @click="openDoc('agreement')">
+        <text class="setting-label">用户协议</text>
+        <text class="setting-arrow">›</text>
+      </view>
+
+      <view class="setting-item" @click="openDoc('privacy')">
+        <text class="setting-label">隐私政策</text>
+        <text class="setting-arrow">›</text>
+      </view>
+
       <view class="setting-item" @click="checkUpdate">
         <text class="setting-label">{{ checking ? '正在检查…' : '检查更新' }}</text>
         <text class="setting-value">v{{ appVersion || '—' }}</text>

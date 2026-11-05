@@ -1,0 +1,1 @@
+"use strict";const e=require("../../common/vendor.js"),r={components:{NavBar:()=>"../../components/NavBar.js"}};if(!Array){e.resolveComponent("NavBar")()}const o=e._export_sfc(r,[["render",function(r,o,n,t,a,s){return{a:e.p({title:"隐私政策"})}}],["__scopeId","data-v-be53b5e6"]]);wx.createPage(o);

@@ -116,6 +116,20 @@
         "navigationStyle": "custom",
         "backgroundColor": "#F8FAFC"
       }
+    },
+    {
+      "path": "pages/agreement/agreement",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
+    },
+    {
+      "path": "pages/privacy/privacy",
+      "style": {
+        "navigationStyle": "custom",
+        "backgroundColor": "#F8FAFC"
+      }
     }
   ],
   "globalStyle": {

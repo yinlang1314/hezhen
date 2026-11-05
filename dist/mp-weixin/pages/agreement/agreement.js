@@ -1,0 +1,1 @@
+"use strict";const e=require("../../common/vendor.js"),r={components:{NavBar:()=>"../../components/NavBar.js"}};if(!Array){e.resolveComponent("NavBar")()}const o=e._export_sfc(r,[["render",function(r,o,n,t,a,s){return{a:e.p({title:"用户协议"})}}],["__scopeId","data-v-98428089"]]);wx.createPage(o);

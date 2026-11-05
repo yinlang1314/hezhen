@@ -14,7 +14,9 @@
     "pages/help/help",
     "pages/feedback/feedback",
     "pages/chat/chat",
-    "pages/profile-edit/profile-edit"
+    "pages/profile-edit/profile-edit",
+    "pages/agreement/agreement",
+    "pages/privacy/privacy"
   ],
   "window": {
     "navigationBarTextStyle": "black",

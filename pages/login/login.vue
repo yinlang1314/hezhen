@@ -49,6 +49,13 @@
         <text class="auth-btn-text">{{ loading ? '登录中...' : '登 录' }}</text>
       </view>
 
+      <text class="agree-note">
+        登录即表示同意
+        <text class="agree-link" @click.stop="openDoc('agreement')">《用户协议》</text>
+        与
+        <text class="agree-link" @click.stop="openDoc('privacy')">《隐私政策》</text>
+      </text>
+
       <view class="card-foot">
         <text class="foot-text">还没有账号？</text>
         <text class="foot-link" @click="goRegister">立即注册</text>

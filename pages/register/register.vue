@@ -54,7 +54,10 @@
       <!-- 协议 -->
       <view class="agree-row" @click="agreed = !agreed">
         <view class="agree-box" :class="{ checked: agreed }">{{ agreed ? '✓' : '' }}</view>
-        <text class="agree-text">我已阅读并同意 <text class="agree-link">《用户协议》</text> 与 <text class="agree-link">《隐私政策》</text></text>
+        <text class="agree-text">我已阅读并同意
+            <text class="agree-link" @click.stop="openDoc('agreement')">《用户协议》</text> 与
+            <text class="agree-link" @click.stop="openDoc('privacy')">《隐私政策》</text>
+          </text>
       </view>
 
       <view class="auth-btn" :class="{ disabled: loading }" @click="register">
