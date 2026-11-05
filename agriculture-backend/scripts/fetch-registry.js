@@ -232,11 +232,12 @@ async function main() {
 
     if (!dryRun) {
       await dbRun(
-        // 注意：只更新用药信息，不动 verified（是否上线由人工核实决定）
-        'UPDATE diseases SET medicines = ?, verify_source = ?, verify_date = ? WHERE id = ?',
+        // 只更新用药信息和来源说明：不动 verified，也不写 verify_date。
+        // verify_date 的语义是"人工核实日期"，导入不是核实——
+        // 以前顺手写了日期，导致 71 条待核实记录看起来像核实过（2026-11-05 修正）。
+        'UPDATE diseases SET medicines = ?, verify_source = ? WHERE id = ?',
         [JSON.stringify(meds),
          '中国农药信息网 农药登记数据（' + found.crop + '/' + found.target + '）',
-         new Date().toISOString().slice(0, 10),
          d.id]
       )
     }
