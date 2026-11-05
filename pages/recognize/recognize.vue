@@ -263,6 +263,24 @@
     </view>
 
     <TabBar current="recognize" />
+    
+    <!-- #ifdef H5 -->
+    <!-- 电脑端没有「系统相机」，这里用浏览器摄像头抓帧 -->
+    <view class="cam-mask" v-if="showCamera">
+      <view class="cam-box">
+        <view class="cam-stage" id="cam-stage"></view>
+        <view class="cam-tip" v-if="camError">
+          <text class="cam-err">{{ camError }}</text>
+          <text class="cam-err-sub">也可以点「从相册选择」上传已有的照片</text>
+        </view>
+        <view class="cam-actions">
+          <view class="cam-btn ghost" @click="closeCamera">取消</view>
+          <view class="cam-btn primary" :class="{ disabled: camError }" @click="captureFrame">拍摄</view>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
+
   </view>
 </template>
 
@@ -295,6 +313,10 @@ export default {
       result: null,
       correcting: false,
       correctName: '',
+      // H5 摄像头（电脑端拍照）
+      showCamera: false,
+      camError: '',
+      _camStream: null,
       submittingCorrect: false
     }
   },
@@ -355,6 +377,14 @@ export default {
 
     // 相机一次只能拍一张。拍一张就直接识别，想更准可以再点「+ 加拍一张」凑到 3 张
     takePhoto() {
+      // #ifdef H5
+      // 手机浏览器有系统相机，直接走 chooseImage；电脑没有，改用 getUserMedia
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      if (!isMobile && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        this.openCamera()
+        return
+      }
+      // #endif
       uni.chooseImage({
         count: 1,
         sourceType: ['camera'],
@@ -374,6 +404,82 @@ export default {
           uni.showToast({ title: '拍照失败，请重试', icon: 'none' })
         }
       })
+    },
+
+    // ---------- H5 摄像头 ----------
+    async openCamera() {
+      this.showCamera = true
+      this.camError = ''
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        })
+        this._camStream = stream
+        this.$nextTick(() => {
+          const stage = document.getElementById('cam-stage')
+          if (!stage) return
+          stage.innerHTML = ''
+          const video = document.createElement('video')
+          video.autoplay = true
+          video.playsInline = true
+          video.muted = true
+          video.style.width = '100%'
+          video.style.height = '100%'
+          video.style.objectFit = 'cover'
+          video.srcObject = stream
+          stage.appendChild(video)
+          video.play().catch(() => {})
+        })
+      } catch (e) {
+        const name = (e && e.name) || ''
+        if (name === 'NotAllowedError') this.camError = '摄像头权限被拒绝，请在浏览器地址栏允许访问摄像头'
+        else if (name === 'NotFoundError' || name === 'OverconstrainedError') this.camError = '没有检测到摄像头设备'
+        else if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          this.camError = '浏览器只在 localhost 或 https 下允许调用摄像头（当前是局域网 http）'
+        } else this.camError = '摄像头打开失败：' + ((e && e.message) || name)
+      }
+    },
+
+    closeCamera() {
+      this.showCamera = false
+      if (this._camStream) {
+        this._camStream.getTracks().forEach((t) => t.stop())
+        this._camStream = null
+      }
+      const stage = document.getElementById('cam-stage')
+      if (stage) stage.innerHTML = ''
+    },
+
+    captureFrame() {
+      if (this.camError) return
+      const stage = document.getElementById('cam-stage')
+      const video = stage && stage.querySelector('video')
+      if (!video || !video.videoWidth) {
+        uni.showToast({ title: '画面还没准备好，等一下再拍', icon: 'none' })
+        return
+      }
+      // 最长边压到 1280，控制上传体积
+      const maxSide = 1280
+      const scale = Math.min(1, maxSide / Math.max(video.videoWidth, video.videoHeight))
+      const w = Math.round(video.videoWidth * scale)
+      const h = Math.round(video.videoHeight * scale)
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+      canvas.toBlob((blob) => {
+        if (!blob) { uni.showToast({ title: '抓帧失败，请重试', icon: 'none' }); return }
+        const url = URL.createObjectURL(blob)
+        this.closeCamera()
+        if (!this.batchMode) {
+          this.imageSrc = url
+          this.startRecognize()
+          return
+        }
+        this.batchImages.push(url)
+        this.afterAddBatch()
+      }, 'image/jpeg', 0.9)
     },
 
     chooseFromAlbum() {
@@ -604,6 +710,63 @@ export default {
 }
 </script>
 <style scoped>
+
+/* ===== H5 摄像头弹窗 ===== */
+.cam-mask {
+  position: fixed;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(2, 6, 23, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 40rpx;
+}
+.cam-box {
+  width: 100%;
+  max-width: 720rpx;
+  background: #0F172A;
+  border-radius: 28rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(148, 163, 184, .25);
+}
+.cam-stage {
+  width: 100%;
+  height: 460rpx;
+  background: #020617;
+}
+.cam-tip {
+  padding: 24rpx 28rpx 0;
+}
+.cam-err {
+  display: block;
+  font-size: 25rpx;
+  color: #FCA5A5;
+  line-height: 1.6;
+}
+.cam-err-sub {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 22rpx;
+  color: #94A3B8;
+}
+.cam-actions {
+  display: flex;
+  gap: 20rpx;
+  padding: 28rpx;
+}
+.cam-btn {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  border-radius: 42rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+.cam-btn.ghost { background: rgba(148, 163, 184, .18); color: #E2E8F0; }
+.cam-btn.primary { background: linear-gradient(135deg, #34D399, #059669); color: #fff; }
+.cam-btn.disabled { opacity: .4; }
 .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 24rpx 32rpx; }
 .top-title { font-size: 34rpx; font-weight: 700; color: var(--t-strong); }
 .top-placeholder { width: 64rpx; }

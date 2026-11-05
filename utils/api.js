@@ -58,6 +58,24 @@ function request(url, method = 'GET', data = {}, timeoutMs) {
 // 连拍识别：先把每张图上传到 /upload，再把地址 POST 给 /recognize-batch。
 // 微信小程序的 wx.uploadFile 只支持单文件，不能依赖 files 数组（H5 才支持）。
 function uploadOneImage(filePath) {
+  // #ifdef H5
+  if (typeof filePath === 'string' && filePath.indexOf('blob:') === 0) {
+    // 摄像头抓帧：走同一套上传，返回后端给的文件地址
+    const token = uni.getStorageSync('token') || ''
+    return buildUrl('/api/disease/upload').then(async (fullUrl) => {
+      const blob = await (await fetch(filePath)).blob()
+      const fd = new FormData()
+      fd.append('image', blob, 'camera.jpg')
+      const res = await fetch(fullUrl, { method: 'POST', headers: token ? { Authorization: 'Bearer ' + token } : {}, body: fd })
+      const data = await res.json()
+      if (data && data.code === 200) {
+        return (data.data && (data.data.url || data.data.path)) || data.url || ''
+      }
+      throw fail((data && data.message) || '上传失败')
+    })
+  }
+  // #endif
+
   const token = uni.getStorageSync('token') || ''
   return buildUrl('/api/disease/upload').then((fullUrl) => new Promise((resolve, reject) => {
     uni.uploadFile({
@@ -102,7 +120,38 @@ function uploadBatch(filePaths) {
   )
 }
 
+// H5 用摄像头抓的帧是 blob: URL，uni.uploadFile 处理不了，
+// 这里直接用 fetch + FormData 发，接口契约和 uploadFile 保持一致。
+function uploadBlobUrl(url, blobUrl) {
+  const token = uni.getStorageSync('token') || ''
+  return buildUrl(url).then(async (fullUrl) => {
+    const blob = await (await fetch(blobUrl)).blob()
+    const fd = new FormData()
+    fd.append('image', blob, 'camera.jpg')
+    let res
+    try {
+      res = await fetch(fullUrl, {
+        method: 'POST',
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
+        body: fd
+      })
+    } catch (e) {
+      invalidateBaseUrl()
+      throw fail('网络异常，请检查后端服务是否已启动、地址是否正确')
+    }
+    let data = null
+    try { data = await res.json() } catch (e) { throw fail('服务器响应异常') }
+    if (res.ok && data && data.code === 200) return data
+    throw fail((data && data.message) || '上传失败')
+  })
+}
+
 function uploadFile(url, filePath, formData = {}) {
+  // #ifdef H5
+  if (typeof filePath === 'string' && filePath.indexOf('blob:') === 0) {
+    return uploadBlobUrl(url, filePath)
+  }
+  // #endif
   const token = uni.getStorageSync('token') || ''
   return buildUrl(url).then((fullUrl) => new Promise((resolve, reject) => {
     uni.uploadFile({
