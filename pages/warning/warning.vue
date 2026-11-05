@@ -51,6 +51,47 @@
         </view>
       </view>
 
+
+      <!-- 本地风险预测（按真实天气算，选「全国」时隐藏） -->
+      <view class="risk-card card">
+        <view class="risk-head">
+          <view>
+            <text class="risk-title">本地风险预测</text>
+            <text class="risk-sub">{{ regions[regionIndex] }} · 未来 3 天</text>
+          </view>
+          <text class="risk-refresh" @click="loadRisk">{{ riskLoading ? "计算中…" : "刷新" }}</text>
+        </view>
+
+        <view class="risk-hint" v-if="regionIndex === 0">
+          <text>选择上方「地区」里的省份，就能看到当地未来 3 天的病害风险</text>
+        </view>
+
+        <view class="risk-loading" v-else-if="riskLoading">
+          <text>正在结合天气计算…</text>
+        </view>
+
+        <view class="risk-error" v-else-if="riskError">
+          <text>{{ riskError }}</text>
+        </view>
+
+        <view v-else>
+          <view class="risk-day" v-for="(d, di) in riskDays" :key="d.date">
+            <view class="risk-day-head">
+              <text class="risk-date">{{ di === 0 ? "今天" : d.date.slice(5) }}</text>
+              <text class="risk-weather">{{ d.tmean }}℃ · 湿度 {{ d.humidity }}% · 雨 {{ d.rain }}mm</text>
+            </view>
+            <view class="risk-items" v-if="d.items.length">
+              <view class="risk-item" v-for="it in d.items" :key="it.name" :class="'lv' + it.level">
+                <text class="risk-name">{{ it.name }}</text>
+                <text class="risk-level">{{ it.levelText }}</text>
+              </view>
+            </view>
+            <text class="risk-none" v-else>暂无达到阈值的病害</text>
+          </view>
+          <text class="risk-note">{{ riskDisclaimer }}</text>
+        </view>
+      </view>
+
       <!-- 列表 -->
       <view class="warning-list" v-if="filteredList.length > 0">
         <view class="warning-item card" v-for="item in filteredList" :key="item.id" @click="showDetail(item)">
@@ -226,7 +267,20 @@ export default {
       diseaseMap: {},     // 病害名 -> 病害档案，用于关联预警
       // 微信小程序右上角有「胶囊按钮」（三个点+圆圈），弹窗必须避开它
       capsuleTop: 26,     // 弹窗顶部的 rpx 值（会按胶囊实际位置覆盖）
+      // 本地风险预测（按天气预报算）
+      riskLoading: false,
+      riskError: '',
+      riskDays: [],
+      riskDisclaimer: '',
 
+    }
+  },
+
+  onLoad(query) {
+    // 支持 /pages/warning/warning?region=江西省 直接定位
+    if (query && query.region) {
+      const idx = this.regions.indexOf(decodeURIComponent(query.region))
+      if (idx > 0) this.regionIndex = idx
     }
   },
 
@@ -234,6 +288,7 @@ export default {
     this.loadWarnings()
     this.loadDiseaseMap()
     this.measureCapsule()
+    this.loadRisk()
   },
 
   computed: {
@@ -300,6 +355,29 @@ export default {
   },
 
   methods: {
+    // 本地风险：按所选省份的天气算
+    async loadRisk() {
+      if (this.regionIndex === 0) { this.riskDays = []; this.riskError = ''; return }
+      const region = this.regions[this.regionIndex]
+      this.riskLoading = true
+      this.riskError = ''
+      try {
+        const res = await api.getWarningRisk(region)
+        if (res && res.code === 200) {
+          this.riskDays = (res.data.days || []).map(d => ({ ...d, items: d.items || [] }))
+          this.riskDisclaimer = res.data.disclaimer || ''
+        } else {
+          this.riskError = (res && res.message) || '暂时算不出风险'
+          this.riskDays = []
+        }
+      } catch (e) {
+        this.riskError = '网络异常，点「刷新」重试'
+        this.riskDays = []
+      } finally {
+        this.riskLoading = false
+      }
+    },
+
     // 测量微信胶囊按钮位置：弹窗顶部要落在它下面，右上角也要避开
     // （H5 / App 没有胶囊，保持默认值即可）
     measureCapsule() {
@@ -361,7 +439,10 @@ export default {
       return cut.length > max ? cut.slice(0, max) + '…' : cut
     },
 
-    onRegionChange(e) { this.regionIndex = e.detail.value },
+    onRegionChange(e) {
+      this.regionIndex = Number(e.detail.value)
+      this.loadRisk()          // 换地区要重算本地风险
+    },
 
     async onRefresh() {
       this.isRefreshing = true
@@ -396,6 +477,106 @@ export default {
 </script>
 
 <style scoped>
+
+/* ===== 本地风险预测 ===== */
+.risk-card {
+  margin-bottom: 24rpx;
+  padding: 28rpx 28rpx 22rpx;
+}
+.risk-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+.risk-title {
+  display: block;
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #0F172A;
+}
+.risk-sub {
+  display: block;
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: #94A3B8;
+}
+.risk-refresh {
+  font-size: 23rpx;
+  color: #059669;
+  padding: 6rpx 16rpx;
+  border-radius: 20rpx;
+  background: #ECFDF5;
+}
+.risk-hint {
+  padding: 26rpx 0;
+  font-size: 23rpx;
+  color: #64748B;
+  line-height: 1.6;
+  text-align: center;
+}
+.risk-loading, .risk-error {
+  padding: 24rpx 0;
+  text-align: center;
+  font-size: 24rpx;
+  color: #64748B;
+}
+.risk-error { color: #B45309; }
+.risk-day {
+  padding: 16rpx 0;
+  border-top: 1px solid #F1F5F9;
+}
+.risk-day:first-child { border-top: none; }
+.risk-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+.risk-date {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #334155;
+}
+.risk-weather {
+  font-size: 21rpx;
+  color: #94A3B8;
+}
+.risk-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.risk-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 16rpx;
+  border-radius: 22rpx;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+.risk-name { font-size: 23rpx; color: #334155; }
+.risk-level { font-size: 21rpx; font-weight: 600; }
+.risk-item.lv3 { background: #FEF2F2; border-color: #FECACA; }
+.risk-item.lv3 .risk-level { color: #DC2626; }
+.risk-item.lv2 { background: #FFFBEB; border-color: #FDE68A; }
+.risk-item.lv2 .risk-level { color: #B45309; }
+.risk-item.lv1 { background: #F0FDF4; border-color: #BBF7D0; }
+.risk-item.lv1 .risk-level { color: #15803D; }
+.risk-none {
+  font-size: 22rpx;
+  color: #CBD5E1;
+}
+.risk-note {
+  display: block;
+  margin-top: 18rpx;
+  padding-top: 16rpx;
+  border-top: 1px dashed #E2E8F0;
+  font-size: 20rpx;
+  color: #94A3B8;
+  line-height: 1.6;
+}
 .container { background-color: #F8FAFC; min-height: 100%; display: flex; flex-direction: column; padding-bottom: 160rpx; }
 .scroll-container { flex: 1; height: 0; min-height: 0; }
 

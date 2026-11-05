@@ -169,6 +169,8 @@ export const api = {
   askAI: (question, history) => request('/api/chat/ask', 'POST', { question, history: history || [] }, 90000),
 
   getWarningList: () => request('/api/warning/list', 'GET'),
+  // 按天气自动算的区域风险（region 传省份名，如「江西省」）
+  getWarningRisk: (region) => request('/api/warning/risk?region=' + encodeURIComponent(region), 'GET', {}, 30000),
 
   // ============ 通用上传（头像等）============
   uploadImage: (filePath) => uploadFile('/api/disease/upload', filePath),
