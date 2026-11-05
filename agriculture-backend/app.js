@@ -177,6 +177,7 @@ app.use('/api/user', require('./routes/user'))
 app.use('/api/history', require('./routes/history'))
 app.use('/api/collection', require('./routes/collection'))
 app.use('/api/warning', require('./routes/warning'))
+app.use('/api/dashboard', require('./routes/dashboard'))   // 数据看板（需管理员）
 app.use('/api/chat', require('./routes/chat'))   // AI 农业问答机器人
 
 // 健康检查：前端用它探测后端地址，同时便于排查（数据库/AI 是否就绪）
