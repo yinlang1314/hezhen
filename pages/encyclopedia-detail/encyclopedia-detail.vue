@@ -11,7 +11,13 @@
         <text class="ph-tip">识别到该病害后会自动补上</text>
       </view>
       <view class="disease-info">
-        <text class="disease-name">{{ disease.name || '未知病虫害' }}</text>
+        <view class="name-row">
+          <text class="disease-name">{{ disease.name || '未知病虫害' }}</text>
+          <view class="verify-badge" v-if="Number(disease.verified) === 1">
+            <text class="verify-check">✓</text>
+            <text>已核实</text>
+          </view>
+        </view>
         <view class="disease-tags" v-if="!failed">
           <text class="tag type-tag">{{ disease.category || '未分类' }}</text>
           <text class="tag level-tag">{{ disease.level_text || '危害等级：中度' }}</text>
@@ -398,6 +404,30 @@ export default {
 </script>
 
 <style scoped>
+
+.name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12rpx;
+}
+.verify-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  background: #ECFDF5;
+  border: 1px solid #A7F3D0;
+  font-size: 21rpx;
+  font-weight: 600;
+  color: #059669;
+  line-height: 1.5;
+}
+.verify-check {
+  font-size: 20rpx;
+  font-weight: 700;
+}
 /* ==================================================================
    病虫害详情 —— 样式（重写版）
    原来两套样式叠加（40 个 !important）互相打架：.header-section 是横排

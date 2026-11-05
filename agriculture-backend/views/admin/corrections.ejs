@@ -1,30 +1,36 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN"><head>
 <%- include('partials/head', { pageTitle: '用户纠错' }) %>
 </head><body>
 <%- include('partials/nav', { current: 'corrections', adminName: adminName }) %>
 <div class="wrap">
-  <h1 class="page-title">用户纠错记录</h1>
-  <div class="page-sub">用户在 App 里指出 AI 判断错误时记录在此：<b>AI 原判断</b> vs <b>用户给出的正确答案</b>。正确答案会自动收录进知识库</div>
+  <h1 class="page-title">用户纠错 · 复核</h1>
+  <div class="page-sub">用户在 App 里指出 AI 判断错误时记录在此。<b>通过</b> = 把对应病害标为"已核实"（App 里会显示来源）；<b>驳回</b> = 保留记录但不采信</div>
 
   <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
   <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
 
-  <div class="alert alert-info">
-    💡 如果某个病害被反复纠正，说明 AI 或知识库有问题，建议到
-    <a href="/admin/diseases">病虫害库</a> 核对它的症状描述与用药方案。
+  <div class="tabs" style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap">
+    <a class="btn btn-sm <%= status === 'pending' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=pending">待复核 <%= counts.pending %></a>
+    <a class="btn btn-sm <%= status === 'approved' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=approved">已通过 <%= counts.approved %></a>
+    <a class="btn btn-sm <%= status === 'rejected' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=rejected">已驳回 <%= counts.rejected %></a>
+    <a class="btn btn-sm <%= status === 'all' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=all">全部 <%= counts.all %></a>
   </div>
 
   <div class="card">
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>记录号</th><th>用户</th><th>AI 原判断</th><th>用户纠正为</th><th>寄主</th><th>时间</th><th style="text-align:right">操作</th></tr>
+          <tr>
+            <th>记录号</th><th>用户</th><th>AI 原判断</th><th>用户纠正为</th><th>寄主</th><th>时间</th><th>状态</th><th style="text-align:right">操作</th>
+          </tr>
         </thead>
         <tbody>
           <% if (!rows.length) { %>
-            <tr><td colspan="7" class="empty-row">暂无纠错记录</td></tr>
+            <tr><td colspan="8" class="empty-row">这个状态下暂无记录</td></tr>
           <% } else { rows.forEach(function (r) { %>
+            <% var st = r.status || 'pending' %>
             <tr>
               <td><%= r.history_id || '-' %></td>
               <td><%= r.username || '未登录' %></td>
@@ -32,11 +38,34 @@
               <td style="color:#047857;font-weight:700"><%= r.correct_name %></td>
               <td><%= r.plant_name || '-' %></td>
               <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time %></td>
+              <td class="nowrap">
+                <% if (st === 'approved') { %>
+                  <span style="color:#047857;font-weight:600">✅ 已通过</span>
+                <% } else if (st === 'rejected') { %>
+                  <span style="color:#b91c1c;font-weight:600">✕ 已驳回</span>
+                <% } else { %>
+                  <span style="color:#b45309;font-weight:600">⏳ 待复核</span>
+                <% } %>
+                <% if (r.reviewer) { %><div style="color:#94a3b8;font-size:12px"><%= r.reviewer %> · <%= (r.reviewed_at || '').slice(0, 16).replace('T', ' ') %></div><% } %>
+                <% if (r.note) { %><div style="color:#64748b;font-size:12px">备注：<%= r.note %></div><% } %>
+              </td>
               <td style="text-align:right">
-                <form method="post" action="/admin/corrections/<%= r.id %>/delete" style="display:inline"
-                      onsubmit="return confirm('删除这条纠错记录？')">
-                  <button class="btn btn-danger btn-sm" type="submit">删除</button>
-                </form>
+                <% if (st === 'pending') { %>
+                  <form method="post" action="/admin/corrections/<%= r.id %>/review" style="display:inline">
+                    <input type="hidden" name="action" value="approve">
+                    <button class="btn btn-sm" type="submit" onclick="return confirm('通过后会把「<%= r.correct_name %>」标为已核实，确定吗？')">通过</button>
+                  </form>
+                  <form method="post" action="/admin/corrections/<%= r.id %>/review" style="display:inline-flex;gap:4px;align-items:center">
+                    <input type="hidden" name="action" value="reject">
+                    <input name="note" placeholder="驳回原因（可选）" style="width:110px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px">
+                    <button class="btn btn-danger btn-sm" type="submit">驳回</button>
+                  </form>
+                <% } else { %>
+                  <form method="post" action="/admin/corrections/<%= r.id %>/delete" style="display:inline"
+                        onsubmit="return confirm('删除这条纠错记录？')">
+                    <button class="btn btn-ghost btn-sm" type="submit">删除</button>
+                  </form>
+                <% } %>
               </td>
             </tr>
           <% }) } %>

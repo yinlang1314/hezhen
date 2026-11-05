@@ -509,14 +509,78 @@ router.get('/histories/export.csv', checkAuth, async (req, res) => {
 // ==================== 用户纠错 ====================
 
 router.get('/corrections', checkAuth, async (req, res) => {
+  const status = ['pending', 'approved', 'rejected', 'all'].includes(String(req.query.status)) ? String(req.query.status) : 'pending'
   try {
+    const where = status === 'all' ? '' : 'WHERE COALESCE(c.status, \'pending\') = ?'
+    const params = status === 'all' ? [] : [status]
     const rows = await dbAll(`
-      SELECT c.*, u.username FROM corrections c LEFT JOIN users u ON u.id = c.user_id
+      SELECT c.*, u.username, d.name AS disease_name_live, d.verified AS disease_verified
+      FROM corrections c
+      LEFT JOIN users u ON u.id = c.user_id
+      LEFT JOIN diseases d ON d.id = c.disease_id
+      ${where}
       ORDER BY c.create_time DESC, c.id DESC LIMIT 200
-    `);
-    res.render('admin/corrections', view(req, '用户纠错', 'corrections', { rows, flash: { success: req.query.success, error: req.query.error } }));
+    `, params)
+
+    // 各状态数量（给页签上显示）
+    const counts = { pending: 0, approved: 0, rejected: 0, all: 0 }
+    const stat = await dbAll(`SELECT COALESCE(status, 'pending') AS s, COUNT(*) AS n FROM corrections GROUP BY COALESCE(status, 'pending')`)
+    stat.forEach((r) => { counts[r.s] = Number(r.n) || 0; counts.all += Number(r.n) || 0 })
+
+    res.render('admin/corrections', view(req, '用户纠错', 'corrections', {
+      rows, counts, status,
+      flash: { success: req.query.success, error: req.query.error }
+    }))
   } catch (e) {
-    res.render('admin/corrections', view(req, '用户纠错', 'corrections', { rows: [], flash: { error: String(e.message) } }));
+    res.render('admin/corrections', view(req, '用户纠错', 'corrections', {
+      rows: [], counts: { pending: 0, approved: 0, rejected: 0, all: 0 }, status,
+      flash: { error: String(e.message) }
+    }))
+  }
+});
+
+// 复核：通过（把对应病害标为已核实）/ 驳回
+router.post('/corrections/:id/review', checkAuth, async (req, res) => {
+  const id = parseInt(req.params.id)
+  const action = String((req.body && req.body.action) || '')
+  const note = String((req.body && req.body.note) || '').trim().slice(0, 200)
+  const reviewer = (req.session && req.session.adminUser) || 'admin'
+  try {
+    const rows = await dbAll('SELECT * FROM corrections WHERE id = ?', [id])
+    const c = rows && rows[0]
+    if (!c) return res.redirect('/admin/corrections?error=记录不存在')
+
+    if (action === 'approve') {
+      // 找对应的病害（优先用回填的 id，其次按名称匹配）
+      let disease = null
+      if (c.disease_id) {
+        const r = await dbAll('SELECT id, name, verified FROM diseases WHERE id = ?', [c.disease_id])
+        disease = r && r[0]
+      }
+      if (!disease) {
+        const r = await dbAll('SELECT id, name, verified FROM diseases WHERE name = ?', [String(c.correct_name || '').trim()])
+        disease = r && r[0]
+      }
+      if (!disease) {
+        return res.redirect('/admin/corrections?error=知识库里没有「' + encodeURIComponent(String(c.correct_name || '')) + '」，请先在病虫害库新增')
+      }
+      const today = new Date().toISOString().slice(0, 10)
+      await dbRun('UPDATE diseases SET verified = 1, verify_source = ?, verify_date = ? WHERE id = ?',
+        ['用户纠错 · 人工复核', today, disease.id])
+      await dbRun('UPDATE corrections SET status = ?, reviewer = ?, reviewed_at = ?, note = ?, disease_id = ? WHERE id = ?',
+        ['approved', reviewer, new Date().toISOString(), note, disease.id, id])
+      return res.redirect('/admin/corrections?success=' + encodeURIComponent('已通过，「' + disease.name + '」标为已核实'))
+    }
+
+    if (action === 'reject') {
+      await dbRun('UPDATE corrections SET status = ?, reviewer = ?, reviewed_at = ?, note = ? WHERE id = ?',
+        ['rejected', reviewer, new Date().toISOString(), note, id])
+      return res.redirect('/admin/corrections?status=rejected&success=已驳回')
+    }
+
+    res.redirect('/admin/corrections?error=未知操作')
+  } catch (e) {
+    res.redirect('/admin/corrections?error=' + encodeURIComponent(String(e.message)))
   }
 });
 

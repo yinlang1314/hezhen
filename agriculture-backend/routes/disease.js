@@ -345,7 +345,10 @@ function nameScore(a, b) {
 
 // 在本地库里找最相似的病害；低于阈值就认为“本地库没有这个病”
 async function matchLocalDisease(name) {
-  const all = await dbAll('SELECT * FROM diseases WHERE verified = 1')
+  // 注意：这里要查全库，不能只查 verified = 1。
+  // 用户纠正自动收录的病害是 verified = 0 的草稿，如果只在已核实里找，
+  // 下次再纠同一个名字就会判定"库里没有"→ 重复插入 → Duplicate entry 报错。
+  const all = await dbAll('SELECT * FROM diseases')
   let best = null
   let bestScore = 0
   for (const row of all) {
@@ -1292,10 +1295,11 @@ router.post('/correct',
     if (!correct) return res.json({ code: 400, message: '请填写正确的病害名称' })
 
     const userId = (req.user && req.user.id) || null
-    await dbRun(
+    const inserted = await dbRun(
       'INSERT INTO corrections (history_id, user_id, ai_name, correct_name, plant_name) VALUES (?, ?, ?, ?, ?)',
       [historyId || null, userId, String(aiName || ''), correct, String(plantName || '')]
     )
+    const correctionId = (inserted && (inserted.insertId || inserted.lastID)) || null
 
     // 修正对应的历史记录（如果这条记录存在且属于当前用户或没有归属）
     let fixed = 0
@@ -1351,10 +1355,19 @@ router.post('/correct',
       learned = false
     }
 
+    // 回填关联的病害 id，方便后台复核时直接定位
+    if (correctionId) {
+      try {
+        const linked = await matchLocalDisease(correct)
+        if (linked && linked.id) await dbRun('UPDATE corrections SET disease_id = ? WHERE id = ?', [linked.id, correctionId])
+      } catch (e) { console.error('回填 disease_id 失败:', e.message) }
+    }
+
     console.log('✍️ 用户纠错：AI 判「' + (aiName || '') + '」→ 实际「' + correct + '」' + (fixed ? '（已修正历史记录）' : ''))
     res.json({ code: 200, message: '感谢纠正！已记录', data: { historyId: historyId || null, correctName: correct, historyFixed: fixed, learnedToLibrary: learned, planGenerated: enriched } })
   } catch (err) {
-    if (String(err.message).indexOf('UNIQUE') >= 0) {
+    // 唯一键冲突说明这条病害已经在库里了，对用户来说等同"已记录"，不算失败
+    if (/UNIQUE|Duplicate entry/i.test(String(err.message))) {
       return res.json({ code: 200, message: '已记录您的纠正', data: { correctName: correct, learnedToLibrary: true } })
     }
     console.error('纠错失败:', err)
