@@ -539,6 +539,68 @@ router.get('/corrections', checkAuth, async (req, res) => {
   }
 });
 
+// ==================== 逐条审核台 ====================
+// 和"批量核实"互补：这里一次看一条完整内容，判断通过 / 待改 / 跳过
+router.get('/review', checkAuth, async (req, res) => {
+  try {
+    const state = String(req.query.state || 'pending')
+    const where = state === 'revise'
+      ? "WHERE verified = 0 AND review_state = 'revise'"
+      : "WHERE verified = 0 AND (review_state IS NULL OR review_state = '')"
+    // 优先看有来源的（能直接上线），没来源的排后面
+    const rows = await dbAll(`SELECT * FROM diseases ${where} ORDER BY (TRIM(COALESCE(verify_source,'')) = '') ASC, id ASC LIMIT 1`)
+    const counts = { pending: 0, revise: 0, verified: 0 }
+    const stat = await dbAll("SELECT verified, COALESCE(review_state,'') st, COUNT(*) n FROM diseases GROUP BY verified, st")
+    stat.forEach((r) => {
+      if (Number(r.verified) === 1) counts.verified += Number(r.n)
+      else if (r.st === 'revise') counts.revise += Number(r.n)
+      else if (r.st === '') counts.pending += Number(r.n)
+    })
+    res.render('admin/review', view(req, '审核台', 'review', {
+      row: rows && rows[0], counts, state,
+      flash: { success: req.query.success, error: req.query.error }
+    }))
+  } catch (e) {
+    res.redirect('/admin?error=' + encodeURIComponent(String(e.message)))
+  }
+})
+
+// 判定：approve=通过上线 / revise=标记待改 / skip=跳过
+router.post('/review/:id/decision', checkAuth, async (req, res) => {
+  const id = parseInt(req.params.id, 10)
+  const action = String((req.body && req.body.action) || '')
+  const note = String((req.body && req.body.note) || '').trim().slice(0, 200)
+  const back = String((req.body && req.body.state) || 'pending')
+  try {
+    const rows = await dbAll('SELECT id, name, verify_source FROM diseases WHERE id = ?', [id])
+    const d = rows && rows[0]
+    if (!d) return res.redirect('/admin/review?error=' + encodeURIComponent('记录不存在'))
+
+    if (action === 'approve') {
+      if (!String(d.verify_source || '').trim()) {
+        return res.redirect('/admin/review?error=' + encodeURIComponent('「' + d.name + '」没有数据来源，不能上线；可以先标记待改'))
+      }
+      const today = new Date().toISOString().slice(0, 10)
+      await dbRun("UPDATE diseases SET verified = 1, verify_date = COALESCE(NULLIF(verify_date, ''), ?), review_state = '', review_note = NULL, category = REPLACE(category, '（AI草稿）', '') WHERE id = ?", [today, id])
+      return res.redirect('/admin/review?success=' + encodeURIComponent('已上线「' + d.name + '」'))
+    }
+
+    if (action === 'revise') {
+      await dbRun("UPDATE diseases SET review_state = 'revise', review_note = ? WHERE id = ?", [note, id])
+      return res.redirect('/admin/review?success=' + encodeURIComponent('已标记「' + d.name + '」待改'))
+    }
+
+    if (action === 'skip') {
+      await dbRun("UPDATE diseases SET review_state = 'skip', review_note = ? WHERE id = ?", [note, id])
+      return res.redirect('/admin/review?state=' + encodeURIComponent(back))
+    }
+
+    res.redirect('/admin/review?error=' + encodeURIComponent('未知操作'))
+  } catch (e) {
+    res.redirect('/admin/review?error=' + encodeURIComponent(String(e.message)))
+  }
+})
+
 // 批量核实：只处理"有数据来源"的条目，没来源的一律跳过并报数
 router.post('/diseases/batch-verify', checkAuth, async (req, res) => {
   try {
