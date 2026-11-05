@@ -36,6 +36,13 @@
     </header>
 
     <main class="content">
+      <el-tabs v-model="activeTab" class="main-tabs">
+        <el-tab-pane label="总览" name="overview" />
+        <el-tab-pane label="病虫害库" name="diseases" />
+      </el-tabs>
+
+      <!-- ===== 总览 ===== -->
+      <template v-if="activeTab === 'overview'">
       <!-- 指标卡 -->
       <el-row :gutter="16">
         <el-col :xs="12" :sm="8" :md="6" v-for="c in cards" :key="c.key">
@@ -95,6 +102,33 @@
         </el-col>
       </el-row>
 
+      </template>
+
+      <!-- ===== 病虫害库（ProTable 高级表格）===== -->
+      <template v-else>
+        <ProTable
+          title="病虫害库"
+          :columns="tableColumns"
+          :data="rows"
+          :total="tableTotal"
+          :loading="tableLoading"
+          :page="tablePage"
+          :page-size="tablePageSize"
+          search-placeholder="搜名称/分类"
+          :filters="[
+            { label: '全部', value: 'all' },
+            { label: '已核实', value: '1' },
+            { label: '待核实', value: '0' }
+          ]"
+          export-url="/api/dashboard/export/diseases.csv"
+          storage-key="pro-table-disease-columns"
+          @search="onTableSearch"
+          @refresh="loadTable"
+          @update:page="(p) => { tablePage = p; loadTable() }"
+          @update:page-size="(s) => { tablePageSize = s; tablePage = 1; loadTable() }"
+        />
+      </template>
+
       <div class="foot-note">
         数据来自后端只读接口 <code>/api/dashboard/*</code>，需要管理员权限；图表用 ECharts 渲染。
       </div>
@@ -103,10 +137,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { login, getToken, setToken, clearToken, overview, trend, distribution, top } from './api.js'
+import { login, getToken, setToken, clearToken, overview, trend, distribution, top, diseases } from './api.js'
+import ProTable from './components/ProTable.vue'
 
 const token = ref(getToken())
 const username = ref('')
@@ -120,6 +155,26 @@ const trendItems = ref([])
 const dist = ref({ category: [], level: [], verified: [] })
 const topList = ref([])
 const topKeyword = ref('')
+
+// ===== 病虫害库表（ProTable）=====
+const activeTab = ref('overview')
+const rows = ref([])
+const tableTotal = ref(0)
+const tableLoading = ref(false)
+const tablePage = ref(1)
+const tablePageSize = ref(10)
+const tableQuery = ref({ keyword: '', filter: '' })
+const tableColumns = [
+  { prop: 'id', label: 'ID', width: 70 },
+  { prop: 'name', label: '病害名称', minWidth: 200, sortable: false },
+  { prop: 'category', label: '分类', minWidth: 160 },
+  { prop: 'type', label: '类型', minWidth: 120 },
+  { prop: 'levelText', label: '危害等级', width: 110 },
+  { prop: 'verified', label: '状态', width: 100, type: 'boolean' },
+  { prop: 'source', label: '数据来源', minWidth: 220 },
+  { prop: 'medCount', label: '用药条数', width: 100 },
+  { prop: 'verifyDate', label: '核对日期', width: 120 }
+]
 
 const trendBox = ref(null)
 const pieBox = ref(null)
@@ -171,6 +226,32 @@ function logout() {
   token.value = ''
   charts.forEach((c) => c && c.dispose())
   charts = []
+}
+
+// 加载病虫害库表格（服务端分页 + 关键词 + 核实状态筛选）
+async function loadTable() {
+  tableLoading.value = true
+  try {
+    const data = await diseases({
+      page: tablePage.value,
+      pageSize: tablePageSize.value,
+      keyword: tableQuery.value.keyword,
+      // 'all' 不传筛选条件
+      verified: tableQuery.value.filter === 'all' ? '' : tableQuery.value.filter
+    })
+    rows.value = data.list || []
+    tableTotal.value = data.total || 0
+  } catch (e) {
+    ElMessage.error(e.message || '加载表格失败')
+  } finally {
+    tableLoading.value = false
+  }
+}
+
+function onTableSearch({ keyword, filter }) {
+  tableQuery.value = { keyword, filter }
+  tablePage.value = 1
+  loadTable()
 }
 
 async function loadAll() {
@@ -251,8 +332,11 @@ function renderCharts() {
 
 function resizeAll() { charts.forEach((c) => c && c.resize()) }
 
+// 切到「病虫害库」时如果还没数据，补一次
+watch(activeTab, (v) => { if (v === 'diseases' && !rows.value.length) loadTable() })
+
 onMounted(async () => {
-  if (token.value) await loadAll()
+  if (token.value) { await loadAll(); await loadTable() }
 })
 onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
 </script>
@@ -271,7 +355,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; }
 .top-right { display: flex; align-items: center; gap: 10px; }
 .who { font-size: 13px; color: #64748b; }
-.content { padding: 16px 20px 40px; }
+.content { padding: 8px 20px 40px; }
+.main-tabs { margin-bottom: 12px; }
 .stat { border-radius: 12px; margin-bottom: 16px; }
 .stat-label { font-size: 13px; color: #64748b; }
 .stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }

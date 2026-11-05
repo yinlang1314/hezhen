@@ -92,4 +92,71 @@ router.get('/top', async (req, res) => {
   }
 })
 
+// 病虫害库分页列表（给看板的 ProTable 用）
+router.get('/diseases', async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1)
+    const pageSize = Math.min(100, Math.max(5, parseInt(req.query.pageSize, 10) || 10))
+    const keyword = String(req.query.keyword || '').trim()
+    const verified = String(req.query.verified || '')   // '' | '1' | '0'
+
+    let where = 'WHERE 1=1'
+    const params = []
+    if (keyword) {
+      where += ' AND (name LIKE ? OR category LIKE ?)'
+      params.push('%' + keyword + '%', '%' + keyword + '%')
+    }
+    if (verified === '1' || verified === '0') {
+      where += ' AND verified = ?'
+      params.push(Number(verified))
+    }
+
+    const totalRow = await dbGet('SELECT COUNT(*) AS n FROM diseases ' + where, params)
+    const rows = await dbAll(
+      'SELECT id, name, category, type, level_text, verified, verify_source, verify_date, medicines FROM diseases ' +
+      where + ' ORDER BY id DESC LIMIT ' + pageSize + ' OFFSET ' + ((page - 1) * pageSize),
+      params
+    )
+
+    res.json({
+      code: 200,
+      data: {
+        total: totalRow ? Number(totalRow.n) : 0,
+        page, pageSize,
+        list: rows.map((r) => {
+          let medCount = 0
+          try { medCount = JSON.parse(r.medicines || '[]').length } catch (e) {}
+          return {
+            id: r.id, name: r.name, category: r.category || '-', type: r.type || '-',
+            levelText: r.level_text || '-',
+            verified: Number(r.verified) === 1,
+            source: r.verify_source || '',
+            verifyDate: r.verify_date || '',
+            medCount
+          }
+        })
+      }
+    })
+  } catch (e) {
+    res.json({ code: 500, message: '列表查询失败：' + e.message })
+  }
+})
+
+// 导出病虫害库 CSV（带 BOM，Excel 打开不乱码；前端 ProTable 的「导出」按钮用）
+router.get('/export/diseases.csv', async (req, res) => {
+  try {
+    const rows = await dbAll('SELECT id, name, category, type, level_text, verified, verify_source, verify_date FROM diseases ORDER BY id')
+    const head = ['ID', '名称', '分类', '类型', '危害等级', '是否核实', '数据来源', '核对日期']
+    const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'
+    const lines = [head.map(esc).join(',')]
+    rows.forEach((r) => lines.push([r.id, r.name, r.category, r.type, r.level_text,
+      Number(r.verified) === 1 ? '是' : '否', r.verify_source || '', r.verify_date || ''].map(esc).join(',')))
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+    res.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + encodeURIComponent('病虫害库.csv'))
+    res.send('\ufeff' + lines.join('\r\n'))
+  } catch (e) {
+    res.status(500).send('导出失败：' + e.message)
+  }
+})
+
 module.exports = router

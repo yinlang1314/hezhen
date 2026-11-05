@@ -28,4 +28,10 @@ export const login = (username, password) =>
 export const overview = () => request('/api/dashboard/overview')
 export const trend = (days = 30) => request('/api/dashboard/trend?days=' + days)
 export const distribution = () => request('/api/dashboard/distribution')
+export const diseases = (params = {}) => {
+  const q = new URLSearchParams()
+  Object.keys(params).forEach((k) => { if (params[k] !== '' && params[k] != null) q.set(k, params[k]) })
+  return request('/api/dashboard/diseases?' + q.toString())
+}
+
 export const top = (limit = 10) => request('/api/dashboard/top?limit=' + limit)
