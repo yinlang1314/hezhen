@@ -56,6 +56,14 @@
         <text class="agree-link" @click.stop="openDoc('privacy')">《隐私政策》</text>
       </text>
 
+      <!-- #ifdef MP-WEIXIN -->
+      <view class="wx-btn" @click="loginByWechat">
+        <text class="wx-icon">微</text>
+        <text class="wx-text">{{ wxLoading ? '登录中…' : '微信一键登录' }}</text>
+      </view>
+      <text class="wx-tip">首次使用会自动创建账号，无需记忆密码</text>
+      <!-- #endif -->
+
       <view class="card-foot">
         <text class="foot-text">还没有账号？</text>
         <text class="foot-link" @click="goRegister">立即注册</text>
@@ -71,13 +79,47 @@ import { api } from '@/utils/api.js'
 
 export default {
   data() {
-    return { 
+    return {
+      wxLoading: false, 
       username: "", 
       password: "",
       loading: false
     }
   },
   methods: {
+    // 微信小程序一键登录
+    loginByWechat() {
+      if (this.wxLoading) return
+      this.wxLoading = true
+      uni.login({
+        provider: 'weixin',
+        success: async (r) => {
+          if (!r.code) {
+            this.wxLoading = false
+            return uni.showToast({ title: '微信未返回登录凭证', icon: 'none' })
+          }
+          try {
+            const res = await api.wxLogin(r.code)
+            if (res.code !== 200) throw new Error(res.message || '登录失败')
+            const { token, userInfo, isNew } = res.data || {}
+            uni.setStorageSync('token', token)
+            if (userInfo) uni.setStorageSync('userInfo', userInfo)
+            uni.showToast({ title: isNew ? '注册成功' : '登录成功', icon: 'success' })
+            setTimeout(() => uni.reLaunch({ url: '/pages/index/index' }), 800)
+          } catch (e) {
+            uni.showToast({ title: (e && e.message) || '微信登录失败', icon: 'none' })
+          } finally {
+            this.wxLoading = false
+          }
+        },
+        fail: () => {
+          this.wxLoading = false
+          uni.showToast({ title: '微信登录未授权', icon: 'none' })
+        }
+      })
+    },
+
+
     // 打开用户协议 / 隐私政策
     openDoc(kind) {
       uni.navigateTo({

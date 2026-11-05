@@ -112,6 +112,85 @@ exports.login = async (req, res) => {
   }
 }
 
+// ==================================================================
+// 微信小程序登录
+//
+// 流程：小程序 uni.login() 拿 code → 这里带着 appid/secret 去微信换 openid
+//      → 按 openid 找用户，没有就建一个 → 发 JWT（和账号密码登录同一套 token）
+//
+// 需要 .env 配两项（微信公众平台 → 开发管理 → 开发设置）：
+//   WX_APPID=wxad5fc24db487f28b
+//   WX_SECRET=你的 AppSecret
+// ==================================================================
+exports.wxLogin = async (req, res) => {
+  try {
+    const code = String((req.body && req.body.code) || '').trim()
+    if (!code) return res.json({ code: 400, message: '缺少登录凭证 code' })
+
+    const appid = process.env.WX_APPID || ''
+    const secret = process.env.WX_SECRET || ''
+    if (!appid || !secret) {
+      return res.json({
+        code: 400,
+        message: '后端未配置微信登录（.env 里需要 WX_APPID 和 WX_SECRET），可先用账号密码登录'
+      })
+    }
+
+    // 用 code 换 openid（微信官方接口，服务端调用）
+    const url = 'https://api.weixin.qq.com/sns/jscode2session?appid=' + encodeURIComponent(appid)
+      + '&secret=' + encodeURIComponent(secret)
+      + '&js_code=' + encodeURIComponent(code)
+      + '&grant_type=authorization_code'
+    const wxRes = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    const wxJson = await wxRes.json()
+    if (wxJson.errcode) {
+      console.error('微信登录失败:', wxJson.errcode, wxJson.errmsg)
+      return res.json({ code: 400, message: '微信登录失败：' + (wxJson.errmsg || wxJson.errcode) })
+    }
+    const openid = String(wxJson.openid || '')
+    if (!openid) return res.json({ code: 400, message: '微信未返回 openid' })
+
+    // 按 openid 找用户，没有就建
+    let user = await dbGet('SELECT * FROM users WHERE openid = ?', [openid])
+    let isNew = false
+    if (!user) {
+      const username = 'wx_' + openid.slice(-8)
+      const bcrypt = require('bcryptjs')
+      // 微信用户不设可用密码（随机哈希），需要时可在后台重置
+      const randomPwd = require('crypto').randomBytes(18).toString('hex')
+      const hash = await bcrypt.hash(randomPwd, 10)
+      const r = await dbRun(
+        'INSERT INTO users (username, password, nickname, openid, source) VALUES (?, ?, ?, ?, ?)',
+        [username, hash, '微信用户', openid, 'wechat']
+      )
+      const newId = (r && (r.insertId || r.lastID)) || null
+      user = await dbGet('SELECT * FROM users WHERE id = ?', [newId])
+      isNew = true
+      console.log('🟢 微信新用户: ' + username + ' openid=' + openid.slice(0, 6) + '***')
+    }
+
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES || '7d' })
+    res.json({
+      code: 200,
+      message: isNew ? '注册并登录成功' : '登录成功',
+      data: {
+        token,
+        isNew,
+        userInfo: {
+          id: user.id,
+          username: user.username,
+          nickname: user.nickname || '',
+          avatar: user.avatar || '',
+          isAdmin: !!user.is_admin
+        }
+      }
+    })
+  } catch (e) {
+    console.error('微信登录异常:', e.message)
+    res.json({ code: 500, message: '微信登录失败：' + e.message })
+  }
+}
+
 // 获取用户信息
 exports.getUserInfo = async (req, res) => {
   try {

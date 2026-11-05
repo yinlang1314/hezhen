@@ -188,6 +188,8 @@ function uploadFile(url, filePath, formData = {}) {
 export const api = {
   // ============ 用户相关 ============
   login: (data) => request('/api/user/login', 'POST', data),
+  // 微信小程序一键登录：前端 uni.login 拿 code，后端换 openid
+  wxLogin: (code) => request('/api/user/wx-login', 'POST', { code }),
   register: (data) => request('/api/user/register', 'POST', data),
   getUserInfo: () => request('/api/user/info', 'GET'),
   logout: () => request('/api/user/logout', 'POST'),

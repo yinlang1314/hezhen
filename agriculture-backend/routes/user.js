@@ -7,6 +7,7 @@ const rateLimit = require('../middleware/rateLimit')
 // 注册、登录无需鉴权
 router.post('/register', userController.register)
 // 登录限流：同一来源每分钟最多 12 次尝试
+router.post('/wx-login', userController.wxLogin)
 router.post('/login', rateLimit({ windowMs: 60 * 1000, max: 12, message: '登录尝试过于频繁' }), userController.login)
 
 // 个人信息、退出需要登录鉴权
