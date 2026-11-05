@@ -98,7 +98,12 @@ app.use(session({
   secret: require('./config/secrets').SESSION_SECRET,
   resave: false,
   saveUninitialized: false,   // 只为真正登录的后台会话创建存储，避免无谓的内存占用
-  cookie: { maxAge: 24 * 60 * 60 * 1000, httpOnly: true }
+  cookie: {
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: 'lax',                             // 跨站表单提交不带 cookie，减小 CSRF 面
+      secure: process.env.COOKIE_SECURE === '1'    // 上 HTTPS 后设 COOKIE_SECURE=1
+    }
 }))
 
 // 可选鉴权：带 token 就解析出用户，不带也放行（统计接口按需返回个性化数据）
@@ -113,6 +118,25 @@ function optionalAuth(req, res, next) {
 
 // 路由挂载
 const adminRouter = require('./routes/admin')
+// 后台改数据的请求做来源校验（CSRF 防护）
+// 原理：浏览器发起的跨站表单提交，Origin/Referer 会是别的站点。
+// 这里只允许同源（或没有来源头的服务端调用，如自动化测试）。
+app.use('/admin', (req, res, next) => {
+  if (req.method !== 'POST') return next()
+  const src = req.get('origin') || req.get('referer') || ''
+  if (!src) return next()          // 服务端调用（脚本/测试）没有来源头
+  try {
+    const host = new URL(src).host
+    if (host !== req.get('host')) {
+      console.warn('🚫 拦截可疑后台请求: ' + req.method + ' ' + req.originalUrl + ' 来源=' + src)
+      return res.status(403).send('请求来源不合法（CSRF 防护）')
+    }
+  } catch (e) {
+    return res.status(403).send('请求来源不合法（CSRF 防护）')
+  }
+  next()
+})
+
 app.use('/admin', adminRouter)
 // 版本信息：App 启动时比对本地 versionCode，决定是否提示更新
 app.get('/api/version', (req, res) => {
@@ -327,10 +351,32 @@ app.use((err, req, res, next) => {
 })
 
 // ==================== 启动服务 ====================
+// 安全体检：管理员还在用 123456 这类默认密码就大声提醒
+async function warnWeakAdminPassword() {
+  try {
+    const bcrypt = require('bcryptjs')
+    const { dbGet } = require('./config/db')
+    const row = await dbGet('SELECT password FROM users WHERE username = ?', ['admin'])
+    if (!row || !row.password) return
+    const weak = ['123456', 'admin', '12345678', 'password']
+    for (const p of weak) {
+      if (await bcrypt.compare(p, row.password)) {
+        console.warn('')
+        console.warn('⚠️  安全提醒：管理员账号 admin 仍在使用默认密码「' + p + '」')
+        console.warn('   请立即更换（我的 → 设置 → 修改密码，或后台右上角「修改密码」）。')
+        console.warn('')
+        return
+      }
+    }
+  } catch (e) { /* 检查失败不影响启动 */ }
+}
+
 async function startServer() {
   try {
     await initDB()
     console.log('✅ 数据库初始化成功')
+
+    await warnWeakAdminPassword()
 
     const server = app.listen(PORT, () => {
       console.log(`✅ 服务运行：http://localhost:${PORT}`)
