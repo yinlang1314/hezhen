@@ -78,6 +78,14 @@ export default {
     }
   },
   methods: {
+    // 打开用户协议 / 隐私政策
+    openDoc(kind) {
+      uni.navigateTo({
+        url: kind === 'privacy' ? '/pages/privacy/privacy' : '/pages/agreement/agreement',
+        fail: (e) => uni.showToast({ title: '打开失败：' + (e.errMsg || ''), icon: 'none' })
+      })
+    },
+
     async login() {
       if (this.loading) return
       

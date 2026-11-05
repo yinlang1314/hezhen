@@ -128,6 +128,14 @@ export default {
     // 使用 token 进行安全校验
       },
   methods: {
+    // 打开用户协议 / 隐私政策
+    openDoc(kind) {
+      uni.navigateTo({
+        url: kind === 'privacy' ? '/pages/privacy/privacy' : '/pages/agreement/agreement',
+        fail: (e) => uni.showToast({ title: '打开失败：' + (e.errMsg || ''), icon: 'none' })
+      })
+    },
+
     // 检查更新：比对后端版本号和本地版本号
     async checkUpdate() {
       if (this.checking) return
