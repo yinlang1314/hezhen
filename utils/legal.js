@@ -6,8 +6,8 @@
 //   CONTACT_GITHUB 换成你的仓库地址
 // ==================================================================
 
-// TODO 发布前替换成真实邮箱（例如 hezhen.support@outlook.com）
-export const CONTACT_EMAIL = 'hezhen.support@example.com'
+// 项目联系邮箱（应用市场审核会核验，请保持可用）
+export const CONTACT_EMAIL = 'yinlang1209@gmail.com'
 export const CONTACT_GITHUB = 'https://github.com/yinlang1314/hezhen'
 
 export const UPDATED_AT = '2026-11-05'
