@@ -9,7 +9,12 @@ const fs = require('fs')
 
 const BASE = process.argv[2] || 'http://127.0.0.1:3000'
 const DRIVER = process.argv[3] || 'mysql'
-const ADMIN_PWD = process.env.E2E_ADMIN_PASSWORD || 'Nong2026#SL'
+// 管理员密码从 .env 读，不写死（改密码后这里不用改）
+const ADMIN_PWD = process.env.E2E_ADMIN_PASSWORD || ''
+if (!ADMIN_PWD) {
+  console.error('❌ 没有配置 E2E_ADMIN_PASSWORD（.env 里加一行：E2E_ADMIN_PASSWORD=当前管理后台密码）')
+  process.exit(1)
+}
 const results = []
 // 记录测试开始时的最大 id，结束时只删自己产生的行（测试可重复运行）
 const __MAXID__ = { corrections: 0, login_logs: 0 }
