@@ -508,6 +508,131 @@ router.get('/histories/export.csv', checkAuth, async (req, res) => {
   }
 });
 
+router.get('/export', checkAuth, (req, res) => {
+  res.render('admin/export', view(req, '数据导出', 'export', {}))
+})
+
+// ==================== Excel 导出 ====================
+// 一键导出后台数据为 .xlsx（带表头样式、自动筛选、冻结首行）
+// 支持 type=histories|users|diseases|corrections|feedback
+router.get('/export.xlsx', checkAuth, async (req, res) => {
+  const type = String(req.query.type || 'histories')
+  try {
+    const ExcelJS = require('exceljs')
+    const wb = new ExcelJS.Workbook()
+    wb.creator = '禾诊管理后台'
+    wb.created = new Date()
+
+    let name = ''
+    let columns = []
+    let rows = []
+
+    if (type === 'histories') {
+      name = '识别记录'
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: '用户', key: 'username', width: 14 },
+        { header: '病害名称', key: 'disease_name', width: 28 },
+        { header: '寄主', key: 'plant_name', width: 12 },
+        { header: '置信度', key: 'confidence', width: 10 },
+        { header: '危害等级', key: 'level_text', width: 12 },
+        { header: '识别来源', key: 'ai_source', width: 22 },
+        { header: '已纠正', key: 'corrected', width: 10 },
+        { header: '时间', key: 'create_time', width: 20 }
+      ]
+      rows = await dbAll(`SELECT h.id, u.username, h.disease_name, h.plant_name, h.confidence,
+        h.level_text, h.ai_source, h.corrected, h.create_time
+        FROM histories h LEFT JOIN users u ON u.id = h.user_id ORDER BY h.create_time DESC`)
+      rows = rows.map((r) => Object.assign({}, r, { corrected: r.corrected === '1' ? '是' : '否', username: r.username || '未登录' }))
+    } else if (type === 'users') {
+      name = '用户'
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: '账号', key: 'username', width: 18 },
+        { header: '昵称', key: 'nickname', width: 16 },
+        { header: '管理员', key: 'is_admin', width: 10 },
+        { header: '来源', key: 'source', width: 12 },
+        { header: '注册时间', key: 'create_time', width: 20 }
+      ]
+      rows = await dbAll('SELECT id, username, nickname, is_admin, source, create_time FROM users ORDER BY id')
+      rows = rows.map((r) => Object.assign({}, r, { is_admin: Number(r.is_admin) === 1 ? '是' : '否', source: r.source || '账号密码' }))
+    } else if (type === 'diseases') {
+      name = '病虫害库'
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: '名称', key: 'name', width: 26 },
+        { header: '分类', key: 'category', width: 16 },
+        { header: '类型', key: 'type', width: 14 },
+        { header: '危害等级', key: 'level_text', width: 12 },
+        { header: '已核实', key: 'verified', width: 10 },
+        { header: '数据来源', key: 'verify_source', width: 30 },
+        { header: '核对日期', key: 'verify_date', width: 14 },
+        { header: '用药数', key: 'med_count', width: 10 }
+      ]
+      rows = await dbAll('SELECT id, name, category, type, level_text, verified, verify_source, verify_date, medicines FROM diseases ORDER BY id')
+      rows = rows.map((r) => {
+        let n = 0
+        try { n = JSON.parse(r.medicines || '[]').length } catch (e) {}
+        return { id: r.id, name: r.name, category: r.category, type: r.type, level_text: r.level_text,
+          verified: Number(r.verified) === 1 ? '是' : '否', verify_source: r.verify_source || '', verify_date: r.verify_date || '', med_count: n }
+      })
+    } else if (type === 'corrections') {
+      name = '用户纠错'
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: '用户', key: 'username', width: 14 },
+        { header: 'AI 原判断', key: 'ai_name', width: 24 },
+        { header: '用户纠正为', key: 'correct_name', width: 24 },
+        { header: '状态', key: 'status', width: 10 },
+        { header: '复核人', key: 'reviewer', width: 12 },
+        { header: '复核时间', key: 'reviewed_at', width: 20 },
+        { header: '备注', key: 'note', width: 26 },
+        { header: '提交时间', key: 'create_time', width: 20 }
+      ]
+      rows = await dbAll(`SELECT c.id, u.username, c.ai_name, c.correct_name, c.status, c.reviewer, c.reviewed_at, c.note, c.create_time
+        FROM corrections c LEFT JOIN users u ON u.id = c.user_id ORDER BY c.id DESC`)
+      const map = { '': '待复核', pending: '待复核', approved: '已通过', rejected: '已驳回' }
+      rows = rows.map((r) => Object.assign({}, r, { status: map[String(r.status || '')] || r.status }))
+    } else if (type === 'feedback') {
+      name = '意见反馈'
+      columns = [
+        { header: 'ID', key: 'id', width: 8 },
+        { header: '用户', key: 'username', width: 14 },
+        { header: '类型', key: 'type', width: 12 },
+        { header: '内容', key: 'content', width: 60 },
+        { header: '时间', key: 'create_time', width: 20 }
+      ]
+      rows = await dbAll(`SELECT f.id, u.username, f.type, f.content, f.create_time
+        FROM feedback f LEFT JOIN users u ON u.id = f.user_id ORDER BY f.id DESC`)
+      rows = rows.map((r) => Object.assign({}, r, { username: r.username || '未登录', type: r.type || '普通' }))
+    } else {
+      return res.status(400).send('未知的导出类型')
+    }
+
+    const ws = wb.addWorksheet(name)
+    ws.columns = columns
+    rows.forEach((r) => ws.addRow(r))
+
+    // 表头样式
+    ws.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } }
+    ws.getRow(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } }
+    ws.getRow(1).height = 22
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } }
+    ws.views = [{ state: 'frozen', ySplit: 1 }]
+
+    const fname = name + '-' + new Date().toISOString().slice(0, 10) + '.xlsx'
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    // 中文文件名用 RFC 5987 编码，避免浏览器乱码
+    res.setHeader('Content-Disposition', "attachment; filename*=UTF-8''" + encodeURIComponent(fname))
+    const buf = await wb.xlsx.writeBuffer()
+    res.send(Buffer.from(buf))
+    console.log('📊 导出 ' + name + '：' + rows.length + ' 行')
+  } catch (e) {
+    console.error('导出失败:', e)
+    res.status(500).send('导出失败：' + e.message)
+  }
+})
+
 // ==================== 用户纠错 ====================
 
 router.get('/corrections', checkAuth, async (req, res) => {

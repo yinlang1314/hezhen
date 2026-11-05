@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '数据导出' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'export', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">一键导出 Excel</h1>
+  <div class="page-sub">点一下直接下载 .xlsx（带表头样式、自动筛选、首行冻结），可以用 Excel / WPS 打开</div>
+
+  <div class="card" style="padding:24px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">
+      <a class="btn" href="/admin/export.xlsx?type=histories" style="padding:18px;text-align:center">📊 识别记录</a>
+      <a class="btn" href="/admin/export.xlsx?type=users" style="padding:18px;text-align:center">👤 用户列表</a>
+      <a class="btn" href="/admin/export.xlsx?type=diseases" style="padding:18px;text-align:center">🌿 病虫害库</a>
+      <a class="btn" href="/admin/export.xlsx?type=corrections" style="padding:18px;text-align:center">✍️ 用户纠错</a>
+      <a class="btn" href="/admin/export.xlsx?type=feedback" style="padding:18px;text-align:center">💬 意见反馈</a>
+    </div>
+  </div>
+
+  <div class="alert alert-info" style="margin-top:16px">
+    💡 导出的是当前**全部**数据（不受列表筛选影响）。数据量很大时导出会慢几秒，属正常。
+  </div>
+</div>
+</body></html>
