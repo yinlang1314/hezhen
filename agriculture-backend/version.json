@@ -3,7 +3,11 @@
     "versionName": "1.0.1",
     "versionCode": 101,
     "url": "https://github.com/yinlang1314/hezhen/raw/main/dist/apk/hezhen-v1.0.1.apk",
-    "notes": "实时监测可关闭结果卡、天气风险预警、纠错复核闭环"
+    "notes": "安全修复（后台鉴权/图片鉴权/纠错越权）+ 天气风险预警 + 纠错复核 + 分享 + 检查更新 + 图片压缩",
+    "builtAt": "2026-11-05 18:47",
+    "file": "dist/apk/hezhen-v1.0.1.apk",
+    "sha256": "A0FA222B9BDB4749AAC135EB",
+    "note": "本次 APK 的 versionCode 与上一版相同（都是 101），所以应用内「检查更新」不会提示；下次打包请用 manifest 里的 1.1.0/110"
   },
   "web": {
     "versionName": "1.0.1",
