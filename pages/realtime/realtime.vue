@@ -139,15 +139,18 @@ export default {
       try { this.testSrcs = decodeURIComponent(options.src).split(',').filter(Boolean) } catch (e) { this.testSrcs = String(options.src).split(',') }
     }
     // #ifdef H5
-    window.addEventListener('error', (e) => {
+    // 监听函数要留引用，否则 onUnload 时移不掉（离开页面后还在改 this）
+    this._onWinError = (e) => {
       this.hint = '脚本报错：' + (e.message || '未知') + '（F12 看详情）'
       this.status = 'error'
-    })
-    window.addEventListener('unhandledrejection', (e) => {
+    }
+    this._onWinRejection = (e) => {
       const r = e.reason || {}
       this.hint = '异步报错：' + (r.message || String(r)) + '（F12 看详情）'
       this.status = 'error'
-    })
+    }
+    window.addEventListener('error', this._onWinError)
+    window.addEventListener('unhandledrejection', this._onWinRejection)
     // #endif
     if (options && options.demo === '1') {
       this.applyResult({
@@ -157,7 +160,13 @@ export default {
       })
     }
   },
-  onUnload() { this.stop() },
+  onUnload() {
+    this.stop()
+    // #ifdef H5
+    if (this._onWinError) window.removeEventListener('error', this._onWinError)
+    if (this._onWinRejection) window.removeEventListener('unhandledrejection', this._onWinRejection)
+    // #endif
+  },
   methods: {
     goDetail() {
       const id = this.result && this.result.diseaseId

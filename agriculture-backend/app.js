@@ -278,6 +278,11 @@ app.get('/api/stats/hot', async (req, res) => {
 // 安全：只接受来自本机的请求。
 app.post('/api/_restart', (req, res) => {
   const ip = String(req.ip || req.connection.remoteAddress || '').replace('::ffff:', '')
+  const proxied = req.headers['x-forwarded-for'] || req.headers['x-real-ip']
+  // 反向代理下 req.ip 会变成代理地址（127.0.0.1），不额外判断就成了"公网可重启"
+  if (proxied) {
+    return res.status(403).json({ code: 403, message: '仅限本机直连调用（检测到代理头）' })
+  }
   if (!['127.0.0.1', '::1', 'localhost'].includes(ip)) {
     return res.status(403).json({ code: 403, message: '仅限本机调用' })
   }
@@ -401,6 +406,13 @@ async function startServer() {
     console.log('✅ 数据库初始化成功')
 
     await warnWeakAdminPassword()
+
+    // 登录日志保留 30 天，启动时清一次，之后每天清一次
+    const guard = require('./middleware/loginGuard')
+    const clean = () => guard.cleanOldLogs(30).catch(() => {})
+    clean()
+    const timer = setInterval(clean, 24 * 60 * 60 * 1000)
+    if (timer.unref) timer.unref()
 
     const server = app.listen(PORT, () => {
       console.log(`✅ 服务运行：http://localhost:${PORT}`)

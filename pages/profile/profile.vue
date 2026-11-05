@@ -129,7 +129,10 @@ export default {
       guestHint: '',
       username: '',
       account: '',
-      stats: { historyCount: 0, collectionCount: 0, diseaseCount: 0 }
+      stats: { historyCount: 0, collectionCount: 0, diseaseCount: 0 },
+      isAdmin: false,          // 管理员入口：来自登录返回的 isAdmin
+      trend: [],               // 最近 7 天识别次数
+      trendTotal: 0
     }
   },
   onShow() {
@@ -154,6 +157,7 @@ export default {
         this.account = res.data?.username || this.account
         this.nickname = res.data?.nickname || ''
         this.avatar = res.data?.avatar ? imageUrl(res.data.avatar) : ''
+        this.isAdmin = Number(res.data?.isAdmin || res.data?.is_admin || 0) === 1
         uni.setStorageSync('userInfo', res.data)
       } catch (e) {
         // 接口异常时保持既有缓存展示，仅记录日志
@@ -163,10 +167,35 @@ export default {
     async loadStats() {
       try {
         const res = await api.getStats()
-        if (res.data) {
-          this.stats = res.data
-        }
+        const d = res.data || {}
+        // 登录用户看"我的"数字，游客看全站数字（后端两个字段都返回）
+        this.stats = Object.assign({}, d, {
+          historyCount: d.myHistoryCount != null ? d.myHistoryCount : d.historyCount,
+          collectionCount: d.myCollectionCount != null ? d.myCollectionCount : d.collectionCount
+        })
+        this.trend = Array.isArray(d.trend) ? d.trend : []
+        this.trendTotal = this.trend.reduce((s, x) => s + Number(x.count || x.n || 0), 0)
       } catch (e) { /* 忽略 */ }
+    },
+
+    // 趋势柱高度：按当天最大值归一化，最小 8%（全天 0 次也留一点高度）
+    barHeight(count) {
+      const max = Math.max(1, ...this.trend.map((x) => Number(x.count || x.n || 0)))
+      const h = Math.round((Number(count || 0) / max) * 100)
+      return Math.max(8, h) + '%'
+    },
+
+    // 管理员入口：H5 新开后台，App/小程序提示用电脑浏览器打开
+    goAdmin() {
+      // #ifdef H5
+      window.open('/admin', '_blank')
+      return
+      // #endif
+      uni.showModal({
+        title: '管理后台',
+        content: '后台是网页版，请在电脑浏览器打开：' + '\n' + 'http://<后端地址>:3000/admin',
+        showCancel: false
+      })
     },
     // 刷新登录状态与游客提示
     refreshLoginState() {

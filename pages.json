@@ -39,7 +39,9 @@
       "path": "pages/encyclopedia/encyclopedia",
       "style": {
         "navigationStyle": "custom",
-        "backgroundColor": "#F8FAFC"
+        "backgroundColor": "#F8FAFC",
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {
@@ -54,6 +56,9 @@
       "style": {
         "navigationStyle": "custom",
         "backgroundColor": "#F8FAFC"
+      ,
+        "enablePullDownRefresh": true,
+        "backgroundTextStyle": "dark"
       }
     },
     {

@@ -48,12 +48,11 @@
 
   <div class="card">
     <div class="table-wrap">
-      <form method="post" action="/admin/diseases/batch-verify" id="batchForm">
       <div class="batch-bar" style="display:flex;align-items:center;gap:12px;margin:0 0 10px;font-size:13px;color:#475569">
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
           <input type="checkbox" id="checkAll" onchange="toggleAll(this)"> 全选本页
         </label>
-        <button class="btn btn-primary btn-sm" type="submit" onclick="return confirmBatch()">批量核实选中的</button>
+        <button class="btn btn-primary btn-sm" type="submit" form="batchForm" onclick="return confirmBatch()">批量核实选中的</button>
         <span style="color:#94a3b8">只会核实填了「数据来源」的条目，没来源的自动跳过</span>
         <span style="color:#b45309">· 来源只证明名录里有这个病，正文质量请自己看过再点</span>
       </div>
@@ -66,7 +65,7 @@
             <tr><td colspan="10" class="empty-row">没有找到病虫害数据</td></tr>
           <% } else { rows.forEach(function (d) { %>
             <tr>
-              <td><input type="checkbox" name="ids" value="<%= d.id %>" class="row-check" <%= d.verified ? 'disabled' : '' %>></td>
+              <td><input type="checkbox" name="ids" value="<%= d.id %>" form="batchForm" class="row-check" <%= d.verified ? 'disabled' : '' %>></td>
               <td>
                 <% if (d.image) { %>
                   <img class="thumb" src="<%= String(d.image).replace(/^https?:\/\/[^/]+/, '') %>" alt="">
@@ -122,7 +121,10 @@
         </tbody>
       </table>
     </div>
-    </form>
+
+    <!-- 批量核实表单：不能包住整张表（行内还有各自的 form，嵌套是非法的），
+         用 HTML5 的 form="batchForm" 把 checkbox 和按钮关联到这里 -->
+    <form method="post" action="/admin/diseases/batch-verify" id="batchForm"></form>
     <script>
       function toggleAll(box) {
         document.querySelectorAll('.row-check:not(:disabled)').forEach(function (c) { c.checked = box.checked })

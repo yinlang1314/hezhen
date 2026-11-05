@@ -153,6 +153,10 @@ export default {
       collectId: null
     }
   },
+  onUnload() {
+    // 页面销毁时解绑全局事件，否则每进一次页面就多挂一个监听（内存泄漏）
+    uni.$off('apiBaseUrlChanged')
+  },
 
   onLoad(options) {
 // 后端地址探测完成后重新渲染，保证图片地址正确
@@ -248,10 +252,14 @@ export default {
 
     buildShare() {
       const d = this.disease || {}
-      const id = this.diseaseId || d.id || ''
+      // 历史记录用的是 histId，不能拿 d.id（那是病害 id，会分享错条目）
+      const isHistory = !!d.isHistory
+      const q = isHistory
+        ? 'hid=' + (this.histId || d.historyId || '')
+        : 'id=' + (this.diseaseId || d.id || '')
       return {
         title: this.shareTitle(),
-        path: '/pages/encyclopedia-detail/encyclopedia-detail?id=' + id,
+        path: '/pages/encyclopedia-detail/encyclopedia-detail?' + q,
         imageUrl: d.image ? imageUrl(d.image) : ''
       }
     },

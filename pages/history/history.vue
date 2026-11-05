@@ -115,6 +115,10 @@ export default {
 
         this.loadHistory()
   },
+  onUnload() {
+    // 页面销毁时解绑全局事件，否则每进一次页面就多挂一个监听（内存泄漏）
+    uni.$off('apiBaseUrlChanged')
+  },
 
   onReachBottom() {
     // 滚到底部自动加载下一页（以前没有，超过 50 条就永远看不到）
@@ -242,7 +246,9 @@ export default {
       this.askConfirm('确定要删除这条记录吗？', '删除', async () => {
           try {
             if (item.id) await api.delHistory(item.id)
-          } catch (e) { /* 忽略后端错误 */ }
+          } catch (e) {
+            return uni.showToast({ title: (e && e.message) || '删除失败，请重试', icon: 'none' })
+          }
           this.historyList.splice(index, 1)
           uni.setStorageSync('historyList', this.historyList)
           uni.showToast({ title: '删除成功', icon: 'success' })
@@ -251,7 +257,9 @@ export default {
 
     async clearAllHistory() {
       this.askConfirm('确定要清空所有历史记录吗？此操作不可恢复', '清空', async () => {
-          try { await api.clearHistory() } catch (e) { /* 忽略 */ }
+          try { await api.clearHistory() } catch (e) {
+            return uni.showToast({ title: (e && e.message) || '清空失败，请重试', icon: 'none' })
+          }
           this.historyList = []
           uni.setStorageSync('historyList', [])
           uni.showToast({ title: '清空成功', icon: 'success' })

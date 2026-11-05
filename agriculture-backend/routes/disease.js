@@ -8,6 +8,7 @@ const fsp = fs.promises;
 const { dbRun, dbGet, dbAll, safeParseJSON } = require('../config/db');
 const rateLimit = require('../middleware/rateLimit');
 const requireAdmin = require('../middleware/requireAdmin');
+const guestQuota = require('../middleware/guestQuota');
 
 // ================== 核心配置 ==================
 // 不再写死后端 IP：图片统一返回相对地址（/uploads/xxx.jpg），
@@ -346,22 +347,34 @@ function nameScore(a, b) {
 }
 
 // 在本地库里找最相似的病害；低于阈值就认为“本地库没有这个病”
+// 名单缓存：识别每帧都要匹配病名，全表 SELECT * 太浪费（249 行 × 十几个大字段）
+let _matchCache = { at: 0, rows: [] }
+const MATCH_CACHE_MS = 30 * 1000
+function invalidateMatchCache() { _matchCache.at = 0 }
+
+async function loadDiseaseNames() {
+  if (Date.now() - _matchCache.at < MATCH_CACHE_MS) return _matchCache.rows
+  const rows = await dbAll('SELECT id, name, verified FROM diseases')
+  _matchCache = { at: Date.now(), rows }
+  return rows
+}
+
 async function matchLocalDisease(name) {
-  // 注意：这里要查全库，不能只查 verified = 1。
-  // 用户纠正自动收录的病害是 verified = 0 的草稿，如果只在已核实里找，
-  // 下次再纠同一个名字就会判定"库里没有"→ 重复插入 → Duplicate entry 报错。
-  const all = await dbAll('SELECT * FROM diseases')
+  // 匹配阶段查全库（含未核实草稿），否则用户纠正过的同名病害会被判定"没有"→ 重复插入；
+  // 但**正文只认已核实**：草稿只有名字可参考，不能让 AI 编的内容回流到用户结果里。
+  const all = await loadDiseaseNames()
   let best = null
   let bestScore = 0
   for (const row of all) {
     const s = nameScore(name, row.name)
     if (s > bestScore) { bestScore = s; best = row }
   }
-  if (best && bestScore >= 0.72) {
-    best.__score = bestScore
-    return best
-  }
-  return null
+  if (!best || bestScore < 0.72) return null
+  if (Number(best.verified) !== 1) return { id: best.id, name: best.name, verified: 0, __score: bestScore }
+  const full = await dbGet('SELECT * FROM diseases WHERE id = ?', [best.id])
+  if (!full) return null
+  full.__score = bestScore
+  return full
 }
 
 // 本地库没有这个病时，把 AI 诊断结果学进知识库 —— 用的越多越全
@@ -427,7 +440,9 @@ function pickStable(diseases, buffer) {
 
 // AI 有时把"没有病害"写成「无」「未知」这种词而不是空串，
 // 直接当病名用会出现一张卡写着"无 / 0% / 轻度危害"的怪结果。
-function normalizeDiseaseName(s) {
+// 注意：不要叫 normalizeDiseaseName —— 上面有个同名函数用于病名相似度比较，
+// 同名会覆盖它（JS 函数声明提升，后者生效），导致匹配逻辑静默失效。
+function emptyDiseaseName(s) {
   const v = String(s == null ? '' : s).trim()
   const EMPTY = ['', '无', '未知', '未知病害', '无病害', '健康', '未识别到病害', '—', '-', 'null', 'undefined']
   return EMPTY.indexOf(v) >= 0 ? '' : v
@@ -733,7 +748,10 @@ function optionalAuth(req, res, next) {
 router.post('/recognize',
   // 实时监测每 2.5 秒一次 → 24 次/分；普通用户仍受 8 次/分的心理预期约束
   rateLimit({ windowMs: 60 * 1000, max: 60, message: '识别太频繁了' }),
-  optionalAuth, upload.single('image'), handleMulterError, async (req, res) => {
+  optionalAuth,
+  // 游客配额只对「单次拍照识别」生效；实时监测是连续请求，按 fast 参数跳过
+  (req, res, next) => (String(req.query.fast || '') === '1' ? next() : guestQuota(req, res, next)),
+  upload.single('image'), handleMulterError, async (req, res) => {
   try {
     if (!req.file) return res.json({ code: 400, message: '请上传图片' })
     const imagePath = '/uploads/' + req.file.filename
@@ -778,7 +796,7 @@ router.post('/recognize',
           })
         }
 
-        const diseaseName = normalizeDiseaseName(v.diseaseName)
+        const diseaseName = emptyDiseaseName(v.diseaseName)
         const nameOk = v.plantName && v.plantName !== '未识别到植物'
         const lv = v.level || 2
         const out = {
@@ -1131,7 +1149,7 @@ function mergeBatchResults(items) {
 
 module.exports.mergeBatchResults = mergeBatchResults
 
-router.post('/recognize-batch',
+router.post('/recognize-batch', guestQuota,
   rateLimit({ windowMs: 60 * 1000, max: 4, message: '连拍识别太频繁了，请稍后再试' }),
   optionalAuth, upload.array('images', 3), handleMulterError, async (req, res) => {
   try {
@@ -1379,9 +1397,11 @@ router.post('/correct',
       }
       const j = (v) => JSON.stringify(Array.isArray(v) ? v : [])
       const levelText = plan ? (plan.level === 1 ? '轻度危害' : plan.level === 3 ? '重度危害' : '中度危害') : '中度危害'
+      // 注意：必须显式写 verified=0 —— 病害表默认值是 1（历史遗留），
+      // 不写的话用户一纠错就直接上线，绕过了人工复核。
       await dbRun(
-        `INSERT INTO diseases (name, type, category, level, level_text, image, symptom, cause, spread, occurrence, medicines, suggestions, prevention)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO diseases (name, type, category, level, level_text, image, verified, symptom, cause, spread, occurrence, medicines, suggestions, prevention)
+         VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)`,
         [correct, (plantName ? plantName + '病害' : '人工纠正'), '用户人工纠正',
          plan ? plan.level : 2, levelText, histImage,
          plan ? (plan.symptom || '') : '', plan ? (plan.cause || '') : '',
@@ -1628,6 +1648,10 @@ router.post('/:id/delete', requireAdmin, async (req, res) => {
     const record = await dbGet('SELECT image, name FROM diseases WHERE id = ?', [id]);
     if (!record) return res.redirect('/admin/diseases?error=病虫害不存在');
     await dbRun('DELETE FROM diseases WHERE id = ?', [id]);
+    // 维护引用关系：收藏/风险规则跟着删，纠错记录只断开关联（保留用户反馈历史）
+    await dbRun('DELETE FROM collections WHERE disease_id = ?', [id]).catch(() => {})
+    await dbRun('DELETE FROM risk_rules WHERE disease_id = ?', [id]).catch(() => {})
+    await dbRun('UPDATE corrections SET disease_id = NULL WHERE disease_id = ?', [id]).catch(() => {})
     if (record.image) await deleteFileIfExists(record.image);
     res.redirect('/admin/diseases?success=' + encodeURIComponent('已删除「' + record.name + '」'));
   } catch (err) {

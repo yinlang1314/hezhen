@@ -125,6 +125,8 @@ export function getBaseUrl() {
 
 // 网络异常时调用：丢掉探测结果，下次请求重新探测
 export function invalidateBaseUrl() {
+  // 关键：必须把已缓存的探测 Promise 清掉，否则 ensureBaseUrl 会一直返回旧地址
+  _pending = null
   _probing = false
   _probed = false
   try { uni.removeStorageSync(PROBE_CACHE_KEY) } catch (e) {}

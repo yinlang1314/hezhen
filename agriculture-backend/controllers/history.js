@@ -7,8 +7,25 @@ exports.addHistory = async (req, res) => {
     const { diseaseName, imageUrl, confidence, name, type, level, levelText, symptom, spread, occurrence, medicines, suggestions, prevention } = req.body
 
     // 兼容两种字段名
-    const disease_name = diseaseName || name || '未知病虫害'
-    const image_url = imageUrl || req.body.image || ''
+    const disease_name = String(diseaseName || name || '未知病虫害').slice(0, 120)
+    const rawImage = String(imageUrl || req.body.image || '')
+
+    // 图片地址不能由客户端随便写（否则能把别人的图挂到自己记录下，或塞外链）
+    let image_url = ''
+    const m = rawImage.match(/\/uploads\/([^?"'\s]+)/)
+    if (m) {
+      const rel = decodeURIComponent(m[1])
+      const owned = await dbGet(
+        "SELECT id FROM histories WHERE user_id = ? AND image_url LIKE ? LIMIT 1",
+        [userId, '%/uploads/' + rel]
+      )
+      const lib = await dbGet('SELECT id FROM diseases WHERE image LIKE ? LIMIT 1', ['%/uploads/' + rel])
+      if (owned || lib) image_url = '/uploads/' + rel
+    } else if (/^\/images\/seed\/[\w.-]+\.(jpe?g|png|webp)$/i.test(rawImage)) {
+      image_url = rawImage
+    } else if (/^https?:\/\//i.test(rawImage)) {
+      image_url = ''   // 外链一律不存（来源不可控）
+    }
     const conf = confidence || 0
     const lv = level || 2
     const lvText = levelText || level_text || '中度危害'
@@ -69,6 +86,8 @@ exports.delHistory = async (req, res) => {
     if (!owned) return res.json({ code: 404, message: '记录不存在或无权删除' })
 
     await dbRun('DELETE FROM histories WHERE id = ? AND user_id = ?', [id, req.user.id])
+    // 关联的纠错记录也清掉，否则 corrections 里会留下指向已删记录的孤儿
+    await dbRun('DELETE FROM corrections WHERE history_id = ?', [id]).catch(() => {})
     res.json({ code: 200, message: '删除成功' })
   } catch (err) {
     console.error('删除历史失败:', err)

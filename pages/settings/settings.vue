@@ -50,18 +50,6 @@
 
     <view class="group-title">通用</view>
     <view class="setting-list">
-      <view class="setting-item">
-        <text class="setting-label">深色模式</text>
-        <switch :checked="darkMode" @change="toggleDarkMode" color="#2ECC71"></switch>
-      </view>
-
-      <view class="setting-item">
-        <text class="setting-label">字体大小</text>
-        <picker :value="fontSizeIndex" :range="fontSizes" @change="onFontSizeChange">
-          <text class="picker-text">{{ fontSizes[fontSizeIndex] }}</text>
-        </picker>
-      </view>
-
       <view class="setting-item" @click="clearCache">
         <text class="setting-label">清除缓存</text>
         <text class="setting-value">{{ cacheSize }}</text>
@@ -101,9 +89,6 @@ export default {
     return {
       checking: false,
       appVersion: '',
-      darkMode: false,
-      fontSizeIndex: 1,
-      fontSizes: ['小', '中', '大'],
       autoSave: true,
       cacheSize: '计算中...',
       showPwd: false,
@@ -122,8 +107,6 @@ export default {
     try { this.appVersion = uni.getSystemInfoSync().appVersion || '' } catch (e) {}
     
 // 读取本地设置
-    this.darkMode = uni.getStorageSync('darkMode') || false
-    this.fontSizeIndex = uni.getStorageSync('fontSizeIndex') || 1
     this.autoSave = uni.getStorageSync('autoSave') !== false
     this.getCacheSize()
     const info = uni.getStorageSync('userInfo') || {}
@@ -255,18 +238,6 @@ export default {
       this.serverInput = def
       this.showServer = false
       uni.showToast({ title: '已恢复默认地址', icon: 'none' })
-    },
-
-    toggleDarkMode(e) {
-      this.darkMode = e.detail.value
-      uni.setStorageSync('darkMode', this.darkMode)
-      uni.showToast({ title: '设置已保存', icon: 'success', duration: 1000 })
-    },
-
-    onFontSizeChange(e) {
-      this.fontSizeIndex = e.detail.value
-      uni.setStorageSync('fontSizeIndex', this.fontSizeIndex)
-      uni.showToast({ title: '设置已保存', icon: 'success', duration: 1000 })
     },
 
     // 获取缓存大小（近似）

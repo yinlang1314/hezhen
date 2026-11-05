@@ -6,5 +6,6 @@ const auth = require('../middleware/auth')
 router.post('/add',auth,collectCtrl.addCollect)
 router.get('/list',auth,collectCtrl.getCollectList)
 router.post('/delete',auth,collectCtrl.delCollect)
+router.post('/clear', auth, collectCtrl.clearCollect)
 
 module.exports = router

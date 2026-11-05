@@ -353,6 +353,10 @@ export default {
     this.refreshGuestLeft()
   },
 
+  // 离开页面要关摄像头，否则指示灯一直亮、切后台还占着设备
+  onHide() { this.closeCamera && this.closeCamera() },
+  onUnload() { this.closeCamera && this.closeCamera() },
+
   methods: {
 
     // 打开实时监测页（仅浏览器）
@@ -660,6 +664,9 @@ export default {
         suggestions: this.result.suggestions,
         prevention: this.result.prevention
       }
+
+      // 设置页关掉「自动保存识别记录」时：只显示结果，不写本地也不补后端
+      if (uni.getStorageSync('autoSave') === false) return
 
       // 本地存储
       let historyList = uni.getStorageSync('historyList') || []

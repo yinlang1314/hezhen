@@ -64,3 +64,13 @@ exports.delCollect = async (req, res) => {
     res.json({ code: 500, message: '取消收藏失败' })
   }
 }
+// 清空收藏：一条 SQL 搞定，替代前端逐条删除（又慢又容易半途失败）
+exports.clearCollect = async (req, res) => {
+  try {
+    const r = await dbRun('DELETE FROM collections WHERE user_id = ?', [req.user.id])
+    res.json({ code: 200, message: '已清空', data: { removed: (r && r.changes) || 0 } })
+  } catch (err) {
+    console.error('清空收藏失败:', err)
+    res.json({ code: 500, message: '清空失败：' + err.message })
+  }
+}

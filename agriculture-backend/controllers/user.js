@@ -86,9 +86,11 @@ exports.login = async (req, res) => {
       return res.json({ code: 400, message: '账号或密码错误' })
     }
 
+    guard.clearFailures(username).catch(() => {})
     await guard.logAttempt({ username, userId: user.id, ip, success: true, reason: '登录成功' })
 
-    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' })
+    // 有效期可通过 .env 调整：JWT_EXPIRES（默认 7d；对外部署建议 12h）
+    const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES || '7d' })
     res.json({
       code: 200,
       message: '登录成功',

@@ -212,6 +212,7 @@ export const api = {
   addCollect: (data) => request('/api/collection/add', 'POST', data),
   getCollectList: () => request('/api/collection/list', 'GET'),
   delCollect: (id) => request('/api/collection/delete', 'POST', { id }),
+  clearCollect: () => request('/api/collection/clear', 'POST', {}),
 
   // ============ 预警 ============
   // AI 农业问答（history 传之前的对话，实现多轮）

@@ -164,7 +164,10 @@ export default {
       this.askConfirm('确定要取消收藏这条记录吗？', '取消收藏', async () => {
           try {
             if (item.id) await api.delCollect(item.id)
-          } catch (e) { /* 忽略 */ }
+          } catch (e) {
+            // 失败就不要动列表，否则下次刷新会"复活"
+            return uni.showToast({ title: (e && e.message) || '取消失败，请重试', icon: 'none' })
+          }
           this.collectionList.splice(index, 1)
           uni.setStorageSync('collectionList', this.collectionList)
           uni.showToast({ title: '已取消收藏', icon: 'success' })
@@ -173,8 +176,10 @@ export default {
 
     async clearAllCollection() {
       this.askConfirm('确定要清空所有收藏吗？此操作不可恢复', '清空', async () => {
-          for (const item of this.collectionList) {
-            try { if (item.id) await api.delCollect(item.id) } catch (e) { /* 忽略 */ }
+          try {
+            await api.clearCollect()   // 一条 SQL 清空，避免逐条请求半途失败
+          } catch (e) {
+            return uni.showToast({ title: (e && e.message) || '清空失败，请重试', icon: 'none' })
           }
           this.collectionList = []
           uni.setStorageSync('collectionList', [])

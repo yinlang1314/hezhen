@@ -110,7 +110,9 @@ function accessLog(opts) {
           .replace('::ffff:', '').split(',')[0].trim();
         stream.write([
           new Date().toISOString(), ip, req.method,
-          decodeURIComponent(url).slice(0, 200), res.statusCode, (Date.now() - start) + 'ms'
+          // 脱敏：URL 里可能带 token（<image> 标签带不了请求头，只能拼 query）
+          decodeURIComponent(url).replace(/([?&](token|access_token|jwt)=)[^&]*/gi, '$1***').slice(0, 200),
+          res.statusCode, (Date.now() - start) + 'ms'
         ].join(' | ') + '\n');
       } catch (e) { /* 日志失败不影响业务 */ }
     });

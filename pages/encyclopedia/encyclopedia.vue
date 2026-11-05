@@ -9,7 +9,7 @@
           class="search-input" 
           v-model="searchKeyword" 
           placeholder="搜索病虫害名称"
-          @input="filterDisease"
+          @input="onSearchInput"
         />
       </view>
     </view>
@@ -92,6 +92,11 @@ export default {
       ],
       activeCategory: 0,
       diseaseList: [],
+      page: 1,
+      pageSize: 50,
+      total: 0,
+      loadingMore: false,
+      searchTimer: null,
       filteredList: [],
       loading: false
     }
@@ -99,6 +104,10 @@ export default {
 
   onShow() {
         this.getDiseaseData()
+  },
+  onUnload() {
+    // 页面销毁时解绑全局事件，否则每进一次页面就多挂一个监听（内存泄漏）
+    uni.$off('apiBaseUrlChanged')
   },
 
   onPullDownRefresh() {
@@ -111,21 +120,42 @@ uni.$on('apiBaseUrlChanged', () => { this.$forceUpdate() })
   },
 
   methods: {
-    async getDiseaseData() {
-      if (this.loading) return
-      this.loading = true
+    // 输入防抖：不要每敲一个字就打一次接口
+    onSearchInput() {
+      if (this.searchTimer) clearTimeout(this.searchTimer)
+      this.searchTimer = setTimeout(() => this.getDiseaseData(true), 400)
+    },
+
+    // reset=true 表示重新从头查（换关键词、下拉刷新）
+    async getDiseaseData(reset) {
+      const isReset = reset === true
+      if (isReset) { this.page = 1; this.loading = true } else if (this.loadingMore) return
       try {
-        const res = await api.getDiseaseList({ page: 1, pageSize: 50 })
-        // 兼容新旧格式：新格式 { list, total }，旧格式 [...]
-        this.diseaseList = Array.isArray(res.data) ? res.data : (res.data?.list || [])
+        const res = await api.getDiseaseList({
+          page: this.page,
+          pageSize: this.pageSize,
+          keyword: this.searchKeyword.trim()     // 服务端搜索，不再只搜已加载的 50 条
+        })
+        const list = Array.isArray(res.data) ? res.data : (res.data?.list || [])
+        this.total = (res.data && res.data.total) || list.length
+        this.diseaseList = isReset ? list : this.diseaseList.concat(list)
       } catch (e) {
         console.error('请求失败:', e)
         uni.showToast({ title: '网络异常，请重试', icon: 'none' })
       } finally {
         this.loading = false
+        this.loadingMore = false
         uni.stopPullDownRefresh()
         this.filterDisease()
       }
+    },
+
+    onReachBottom() {
+      // 还有更多就加载下一页
+      if (this.diseaseList.length >= this.total) return
+      this.loadingMore = true
+      this.page += 1
+      this.getDiseaseData(false)
     },
 
     changeCategory(id) {

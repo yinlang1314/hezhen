@@ -69,6 +69,8 @@ router.post('/login', async (req, res) => {
       req.session.isAdmin = true;
       req.session.adminName = user.username;
       req.session.adminId = user.id;
+      // 登录成功要清失败计数，否则累计到阈值会被"历史失败"锁住
+      guard.clearFailures(username).catch(() => {});
       guard.logAttempt({ username, userId: user.id, ip, success: true, reason: '登录成功', source: 'admin' });
       console.log('🔓 后台登录成功: ' + username + ' @' + ip);
       res.redirect('/admin');
@@ -633,7 +635,7 @@ router.post('/corrections/:id/review', checkAuth, async (req, res) => {
   const id = parseInt(req.params.id)
   const action = String((req.body && req.body.action) || '')
   const note = String((req.body && req.body.note) || '').trim().slice(0, 200)
-  const reviewer = (req.session && req.session.adminUser) || 'admin'
+  const reviewer = (req.session && (req.session.adminName || req.session.adminUser)) || 'admin'
   try {
     const rows = await dbAll('SELECT * FROM corrections WHERE id = ?', [id])
     const c = rows && rows[0]
