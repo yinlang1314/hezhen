@@ -1,138 +1,179 @@
 <template>
-  <!-- 未登录：先登录（管理员账号） -->
-  <div v-if="!token" class="login-wrap">
-    <el-card class="login-card" shadow="always">
-      <div class="login-head">
-        <div class="logo">禾</div>
-        <div>
-          <div class="login-title">禾诊 · 数据看板</div>
-          <div class="login-sub">Vue 3 + Element Plus + ECharts</div>
-        </div>
+  <!-- ============ 未登录：企业级登录页（左品牌 / 右表单） ============ -->
+  <div v-if="!token" class="login-page">
+    <section class="login-brand">
+      <div class="brand-mark">禾</div>
+      <h1>禾诊 · 病虫害数据平台</h1>
+      <p class="brand-sub">Knowledge · Recognition · Early Warning</p>
+      <ul class="brand-points">
+        <li><span>01</span>知识库共 249 条，人工复核后上线</li>
+        <li><span>02</span>AI 识别 + 天气风险预警联动</li>
+        <li><span>03</span>数据看板需管理员权限访问</li>
+      </ul>
+      <div class="brand-foot">© 2026 禾诊 · 农业智能防治系统</div>
+    </section>
+
+    <section class="login-form-wrap">
+      <div class="login-form">
+        <h2>登录数据看板</h2>
+        <p class="login-hint">使用管理员账号登录（与 App / 后台同一套账号）</p>
+        <el-form label-position="top" @submit.prevent="doLogin">
+          <el-form-item label="账号">
+            <el-input v-model="username" size="large" placeholder="请输入管理员账号" />
+          </el-form-item>
+          <el-form-item label="密码">
+            <el-input v-model="password" type="password" size="large" show-password placeholder="请输入密码" @keyup.enter="doLogin" />
+          </el-form-item>
+          <el-button type="primary" size="large" class="login-btn" :loading="logging" @click="doLogin">登 录</el-button>
+        </el-form>
+        <div class="login-tip">非管理员账号会被拒绝访问</div>
       </div>
-      <el-form @submit.prevent="doLogin">
-        <el-form-item>
-          <el-input v-model="username" placeholder="管理员账号" size="large" clearable />
-        </el-form-item>
-        <el-form-item>
-          <el-input v-model="password" type="password" placeholder="密码" size="large" show-password @keyup.enter="doLogin" />
-        </el-form-item>
-        <el-button type="success" size="large" :loading="logging" style="width:100%" @click="doLogin">
-          登录看板
-        </el-button>
-      </el-form>
-      <div class="login-tip">只允许管理员账号登录（和 App 账号同一套）</div>
-    </el-card>
+    </section>
   </div>
 
-  <!-- 已登录：看板 -->
-  <div v-else class="page">
-    <header class="topbar">
-      <div class="brand"><span class="dot"></span> 禾诊 · 数据看板</div>
-      <div class="top-right">
-        <span class="who">{{ who }}</span>
-        <el-button size="small" :loading="loading" @click="loadAll">刷新</el-button>
-        <el-button size="small" type="danger" plain @click="logout">退出</el-button>
+  <!-- ============ 已登录：左侧栏 + 顶栏 + 工作区 ============ -->
+  <div v-else class="layout">
+    <aside class="aside">
+      <div class="aside-logo">
+        <span class="mark">禾</span>
+        <span class="logo-text">禾诊数据平台</span>
       </div>
-    </header>
+      <nav class="aside-nav">
+        <div class="nav-group">分析</div>
+        <a :class="['nav-item', { on: menu === 'overview' }]" @click="menu = 'overview'">
+          <span class="nav-ico">◎</span> 运营总览
+        </a>
+        <a :class="['nav-item', { on: menu === 'diseases' }]" @click="switchMenu('diseases')">
+          <span class="nav-ico">▤</span> 病虫害库
+        </a>
+        <div class="nav-group">系统</div>
+        <a class="nav-item" href="http://localhost:3000/admin" target="_blank">
+          <span class="nav-ico">↗</span> 管理后台
+        </a>
+      </nav>
+      <div class="aside-user">
+        <div class="avatar">{{ (who || 'A').slice(0, 1).toUpperCase() }}</div>
+        <div class="user-meta">
+          <div class="user-name">{{ who }}</div>
+          <div class="user-role">管理员</div>
+        </div>
+        <a class="logout" @click="logout">退出</a>
+      </div>
+    </aside>
 
-    <main class="content">
-      <el-tabs v-model="activeTab" class="main-tabs">
-        <el-tab-pane label="总览" name="overview" />
-        <el-tab-pane label="病虫害库" name="diseases" />
-      </el-tabs>
+    <div class="main">
+      <header class="header">
+        <div class="crumb">
+          <span>数据看板</span><i>/</i><strong>{{ menu === 'overview' ? '运营总览' : '病虫害库' }}</strong>
+        </div>
+        <div class="header-right">
+          <span class="updated" v-if="lastUpdated">更新于 {{ lastUpdated }}</span>
+          <el-button size="small" :loading="loading" @click="loadAll">刷新数据</el-button>
+        </div>
+      </header>
 
-      <!-- ===== 总览 ===== -->
-      <template v-if="activeTab === 'overview'">
-      <!-- 指标卡 -->
-      <el-row :gutter="16">
-        <el-col :xs="12" :sm="8" :md="6" v-for="c in cards" :key="c.key">
-          <el-card class="stat" shadow="hover">
-            <div class="stat-label">{{ c.label }}</div>
-            <div class="stat-value" :style="{ color: c.color }">
-              {{ stats[c.key] ?? '-' }}<span class="stat-unit">{{ c.unit }}</span>
+      <main class="workspace">
+        <!-- ===== 运营总览 ===== -->
+        <template v-if="menu === 'overview'">
+          <div class="kpi-grid">
+            <div class="kpi" v-for="c in cards" :key="c.key">
+              <div class="kpi-top">
+                <span class="kpi-label">{{ c.label }}</span>
+                <span class="kpi-dot" :style="{ background: c.color }"></span>
+              </div>
+              <div class="kpi-value">{{ stats[c.key] ?? '-' }}<small>{{ c.unit }}</small></div>
+              <div class="kpi-foot">
+                <span>{{ c.hint }}</span>
+                <em v-if="c.key === 'histories' && trendDelta !== null"
+                    :class="trendDelta >= 0 ? 'up' : 'down'">
+                  {{ trendDelta >= 0 ? '▲' : '▼' }} {{ Math.abs(trendDelta) }} 较前 7 天
+                </em>
+              </div>
             </div>
-            <div class="stat-hint">{{ c.hint }}</div>
-          </el-card>
-        </el-col>
-      </el-row>
+          </div>
 
-      <!-- 图表 -->
-      <el-row :gutter="16" style="margin-top:16px">
-        <el-col :xs="24" :md="16">
-          <el-card shadow="hover">
-            <template #header>
-              <div class="card-head">
-                <span>最近 30 天识别量</span>
-                <el-tag size="small" type="success">{{ trendTotal }} 次</el-tag>
-              </div>
-            </template>
-            <div ref="trendBox" class="chart"></div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :md="8">
-          <el-card shadow="hover">
-            <template #header>病害分类分布</template>
-            <div ref="pieBox" class="chart"></div>
-          </el-card>
-        </el-col>
-      </el-row>
+          <div class="grid-2">
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>识别量趋势</h3>
+                  <p>最近 30 天 · 共 {{ trendTotal }} 次</p>
+                </div>
+                <el-radio-group v-model="trendDays" size="small" @change="loadTrend">
+                  <el-radio-button :value="7">7 天</el-radio-button>
+                  <el-radio-button :value="30">30 天</el-radio-button>
+                </el-radio-group>
+              </header>
+              <div ref="trendBox" class="chart-lg"></div>
+            </section>
 
-      <el-row :gutter="16" style="margin-top:16px">
-        <el-col :xs="24" :md="12">
-          <el-card shadow="hover">
-            <template #header>危害等级分布</template>
-            <div ref="levelBox" class="chart-sm"></div>
-          </el-card>
-        </el-col>
-        <el-col :xs="24" :md="12">
-          <el-card shadow="hover">
-            <template #header>
-              <div class="card-head">
-                <span>识别次数 Top 10</span>
-                <el-input v-model="topKeyword" size="small" placeholder="搜索病害" style="width:160px" clearable />
-              </div>
-            </template>
-            <el-table :data="filteredTop" size="small" height="260" stripe>
-              <el-table-column type="index" width="50" label="#" />
-              <el-table-column prop="name" label="病害名称" min-width="160" sortable />
-              <el-table-column prop="times" label="次数" width="90" sortable />
-              <el-table-column prop="lastTime" label="最近一次" width="170" />
-            </el-table>
-          </el-card>
-        </el-col>
-      </el-row>
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>病害分类构成</h3>
+                  <p>按知识条数统计</p>
+                </div>
+              </header>
+              <div ref="pieBox" class="chart-lg"></div>
+            </section>
+          </div>
 
-      </template>
+          <div class="grid-2">
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>危害等级分布</h3>
+                  <p>知识库条目按等级统计</p>
+                </div>
+              </header>
+              <div ref="levelBox" class="chart-md"></div>
+            </section>
 
-      <!-- ===== 病虫害库（ProTable 高级表格）===== -->
-      <template v-else>
-        <ProTable
-          title="病虫害库"
-          :columns="tableColumns"
-          :data="rows"
-          :total="tableTotal"
-          :loading="tableLoading"
-          :page="tablePage"
-          :page-size="tablePageSize"
-          search-placeholder="搜名称/分类"
-          :filters="[
-            { label: '全部', value: 'all' },
-            { label: '已核实', value: '1' },
-            { label: '待核实', value: '0' }
-          ]"
-          export-url="/api/dashboard/export/diseases.csv"
-          storage-key="pro-table-disease-columns"
-          @search="onTableSearch"
-          @refresh="loadTable"
-          @update:page="(p) => { tablePage = p; loadTable() }"
-          @update:page-size="(s) => { tablePageSize = s; tablePage = 1; loadTable() }"
-        />
-      </template>
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>识别 TOP 10</h3>
+                  <p>按识别次数排序</p>
+                </div>
+                <el-input v-model="topKeyword" size="small" placeholder="筛选病害" style="width:150px" clearable />
+              </header>
+              <el-table :data="filteredTop" size="small" height="264" stripe>
+                <el-table-column type="index" width="48" label="#" />
+                <el-table-column prop="name" label="病害名称" min-width="170" show-overflow-tooltip />
+                <el-table-column prop="times" label="次数" width="80" align="right" />
+                <el-table-column prop="lastTime" label="最近识别" width="160" align="right" />
+              </el-table>
+            </section>
+          </div>
+        </template>
 
-      <div class="foot-note">
-        数据来自后端只读接口 <code>/api/dashboard/*</code>，需要管理员权限；图表用 ECharts 渲染。
-      </div>
-    </main>
+        <!-- ===== 病虫害库（ProTable） ===== -->
+        <template v-else>
+          <ProTable
+            title="病虫害知识库"
+            :columns="tableColumns"
+            :data="rows"
+            :total="tableTotal"
+            :loading="tableLoading"
+            :page="tablePage"
+            :page-size="tablePageSize"
+            search-placeholder="搜索名称 / 分类"
+            :filters="[
+              { label: '全部状态', value: 'all' },
+              { label: '已核实', value: '1' },
+              { label: '待核实', value: '0' }
+            ]"
+            export-url="/api/dashboard/export/diseases.csv"
+            storage-key="pro-table-disease-columns"
+            :height="560"
+            @search="onTableSearch"
+            @refresh="loadTable"
+            @update:page="(p) => { tablePage = p; loadTable() }"
+            @update:page-size="(s) => { tablePageSize = s; tablePage = 1; loadTable() }"
+          />
+        </template>
+      </main>
+    </div>
   </div>
 </template>
 
@@ -149,30 +190,31 @@ const password = ref('')
 const logging = ref(false)
 const loading = ref(false)
 const who = ref(localStorage.getItem('dash_user') || 'admin')
+const menu = ref('overview')
+const lastUpdated = ref('')
 
 const stats = ref({})
 const trendItems = ref([])
+const trendDays = ref(30)
 const dist = ref({ category: [], level: [], verified: [] })
 const topList = ref([])
 const topKeyword = ref('')
 
-// ===== 病虫害库表（ProTable）=====
-const activeTab = ref('overview')
 const rows = ref([])
 const tableTotal = ref(0)
 const tableLoading = ref(false)
 const tablePage = ref(1)
 const tablePageSize = ref(10)
-const tableQuery = ref({ keyword: '', filter: '' })
+const tableQuery = ref({ keyword: '', filter: 'all' })
 const tableColumns = [
-  { prop: 'id', label: 'ID', width: 70 },
-  { prop: 'name', label: '病害名称', minWidth: 200, sortable: false },
-  { prop: 'category', label: '分类', minWidth: 160 },
-  { prop: 'type', label: '类型', minWidth: 120 },
+  { prop: 'id', label: 'ID', width: 76 },
+  { prop: 'name', label: '病害名称', minWidth: 220 },
+  { prop: 'category', label: '分类', minWidth: 170 },
+  { prop: 'type', label: '类型', minWidth: 130 },
   { prop: 'levelText', label: '危害等级', width: 110 },
   { prop: 'verified', label: '状态', width: 100, type: 'boolean' },
-  { prop: 'source', label: '数据来源', minWidth: 220 },
-  { prop: 'medCount', label: '用药条数', width: 100 },
+  { prop: 'source', label: '数据来源', minWidth: 240 },
+  { prop: 'medCount', label: '用药', width: 84, align: 'right' },
   { prop: 'verifyDate', label: '核对日期', width: 120 }
 ]
 
@@ -182,21 +224,28 @@ const levelBox = ref(null)
 let charts = []
 
 const cards = [
-  { key: 'diseases', label: '病虫害总数', unit: ' 条', hint: '知识库全部条目', color: '#0f766e' },
-  { key: 'verified', label: '已核实（App 可见）', unit: ' 条', hint: '有来源且人工复核', color: '#059669' },
-  { key: 'users', label: '用户数', unit: ' 人', hint: '含微信登录', color: '#2563eb' },
-  { key: 'histories', label: '识别记录', unit: ' 条', hint: '全部用户的识别历史', color: '#7c3aed' },
-  { key: 'correctionsPending', label: '待复核纠错', unit: ' 条', hint: '需要人工判断', color: '#d97706' },
-  { key: 'wxUsers', label: '微信用户', unit: ' 人', hint: '小程序一键登录', color: '#16a34a' },
-  { key: 'feedback', label: '意见反馈', unit: ' 条', hint: '用户留言', color: '#0891b2' },
-  { key: 'collections', label: '收藏总数', unit: ' 条', hint: '用户收藏的病害', color: '#db2777' }
+  { key: 'diseases', label: '知识库条目', unit: ' 条', hint: '包含待核实草稿', color: '#0f766e' },
+  { key: 'verified', label: '已核实上线', unit: ' 条', hint: 'App 内可见', color: '#047857' },
+  { key: 'users', label: '注册用户', unit: ' 人', hint: '含微信登录用户', color: '#1d4ed8' },
+  { key: 'histories', label: '累计识别', unit: ' 次', hint: '全部用户识别记录', color: '#6d28d9' },
+  { key: 'correctionsPending', label: '待复核纠错', unit: ' 条', hint: '需人工判断', color: '#b45309' },
+  { key: 'wxUsers', label: '微信登录用户', unit: ' 人', hint: '小程序一键登录', color: '#047857' },
+  { key: 'feedback', label: '意见反馈', unit: ' 条', hint: '用户提交', color: '#0e7490' },
+  { key: 'collections', label: '用户收藏', unit: ' 条', hint: '收藏的病害条目', color: '#be185d' }
 ]
 
 const trendTotal = computed(() => trendItems.value.reduce((s, x) => s + (x.count || 0), 0))
+// 近 7 天 vs 前 7 天，用于 KPI 的趋势提示
+const trendDelta = computed(() => {
+  const items = trendItems.value
+  if (items.length < 14) return null
+  const last7 = items.slice(-7).reduce((s, x) => s + (x.count || 0), 0)
+  const prev7 = items.slice(-14, -7).reduce((s, x) => s + (x.count || 0), 0)
+  return last7 - prev7
+})
 const filteredTop = computed(() => {
   const k = topKeyword.value.trim()
-  if (!k) return topList.value
-  return topList.value.filter((x) => String(x.name).includes(k))
+  return k ? topList.value.filter((x) => String(x.name).includes(k)) : topList.value
 })
 
 async function doLogin() {
@@ -205,7 +254,7 @@ async function doLogin() {
   try {
     const data = await login(username.value, password.value)
     if (!data.userInfo || !data.userInfo.isAdmin) {
-      ElMessage.error('这个账号不是管理员，无法查看数据看板')
+      ElMessage.error('该账号没有管理员权限')
       return
     }
     setToken(data.token)
@@ -214,6 +263,7 @@ async function doLogin() {
     token.value = data.token
     await nextTick()
     await loadAll()
+    await loadTable()
   } catch (e) {
     ElMessage.error(e.message || '登录失败')
   } finally {
@@ -228,7 +278,34 @@ function logout() {
   charts = []
 }
 
-// 加载病虫害库表格（服务端分页 + 关键词 + 核实状态筛选）
+async function loadTrend() {
+  try {
+    const t = await trend(trendDays.value)
+    trendItems.value = (t && t.items) || []
+    await nextTick()
+    renderCharts()
+  } catch (e) { /* 由 loadAll 统一提示 */ }
+}
+
+async function loadAll() {
+  loading.value = true
+  try {
+    const [o, t, d, tp] = await Promise.all([overview(), trend(trendDays.value), distribution(), top(10)])
+    stats.value = o || {}
+    trendItems.value = (t && t.items) || []
+    dist.value = d || { category: [], level: [], verified: [] }
+    topList.value = tp || []
+    lastUpdated.value = new Date().toLocaleTimeString('zh-CN', { hour12: false })
+    await nextTick()
+    renderCharts()
+  } catch (e) {
+    if (/登录已过期/.test(e.message)) { logout(); ElMessage.error('登录已过期，请重新登录') }
+    else ElMessage.error(e.message || '加载失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 async function loadTable() {
   tableLoading.value = true
   try {
@@ -236,7 +313,6 @@ async function loadTable() {
       page: tablePage.value,
       pageSize: tablePageSize.value,
       keyword: tableQuery.value.keyword,
-      // 'all' 不传筛选条件
       verified: tableQuery.value.filter === 'all' ? '' : tableQuery.value.filter
     })
     rows.value = data.list || []
@@ -248,49 +324,42 @@ async function loadTable() {
   }
 }
 
+function switchMenu(key) {
+  menu.value = key
+  if (key === 'diseases' && !rows.value.length) loadTable()
+}
+
 function onTableSearch({ keyword, filter }) {
   tableQuery.value = { keyword, filter }
   tablePage.value = 1
   loadTable()
 }
 
-async function loadAll() {
-  loading.value = true
-  try {
-    const [o, t, d, tp] = await Promise.all([overview(), trend(30), distribution(), top(10)])
-    stats.value = o || {}
-    trendItems.value = (t && t.items) || []
-    dist.value = d || { category: [], level: [], verified: [] }
-    topList.value = tp || []
-    await nextTick()
-    renderCharts()
-  } catch (e) {
-    if (/登录已过期/.test(e.message)) { logout(); ElMessage.error('登录已过期') }
-    else ElMessage.error(e.message || '加载失败')
-  } finally {
-    loading.value = false
-  }
-}
+const PALETTE = ['#0f766e', '#0e7490', '#1d4ed8', '#6d28d9', '#b45309', '#be185d', '#047857', '#475569']
 
 function renderCharts() {
   if (!trendBox.value || !pieBox.value || !levelBox.value) return
   charts.forEach((c) => c && c.dispose())
   charts = []
 
+  const baseText = { color: '#64748b', fontSize: 11 }
+  const axisLine = { lineStyle: { color: '#e2e8f0' } }
+  const splitLine = { lineStyle: { color: '#f1f5f9' } }
+
   const trendChart = echarts.init(trendBox.value)
   trendChart.setOption({
-    grid: { left: 40, right: 20, top: 20, bottom: 30 },
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: trendItems.value.map((x) => x.date), axisLine: { lineStyle: { color: '#cbd5e1' } } },
-    yAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } } },
+    grid: { left: 44, right: 18, top: 18, bottom: 28 },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
+    xAxis: { type: 'category', data: trendItems.value.map((x) => x.date), axisLine, axisLabel: baseText, axisTick: { show: false } },
+    yAxis: { type: 'value', axisLine: { show: false }, axisLabel: baseText, splitLine, axisTick: { show: false } },
     series: [{
-      type: 'line', smooth: true, showSymbol: false,
+      type: 'line', smooth: 0.3, showSymbol: false,
       data: trendItems.value.map((x) => x.count),
-      lineStyle: { width: 3, color: '#059669' },
+      lineStyle: { width: 2, color: '#0f766e' },
       areaStyle: {
         color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(5,150,105,.35)' },
-          { offset: 1, color: 'rgba(5,150,105,.02)' }
+          { offset: 0, color: 'rgba(15,118,110,.28)' },
+          { offset: 1, color: 'rgba(15,118,110,.01)' }
         ])
       }
     }]
@@ -298,31 +367,27 @@ function renderCharts() {
 
   const pieChart = echarts.init(pieBox.value)
   pieChart.setOption({
-    tooltip: { trigger: 'item' },
-    legend: { type: 'scroll', bottom: 0, textStyle: { fontSize: 11 } },
+    color: PALETTE,
+    tooltip: { trigger: 'item', formatter: '{b}<br/>{c} 条（{d}%）' },
+    legend: { type: 'scroll', bottom: 0, icon: 'circle', itemWidth: 8, itemHeight: 8, textStyle: baseText },
     series: [{
-      type: 'pie', radius: ['42%', '66%'], center: ['50%', '44%'],
-      avoidLabelOverlap: true,
+      type: 'pie', radius: ['46%', '68%'], center: ['50%', '42%'], avoidLabelOverlap: true,
       itemStyle: { borderColor: '#fff', borderWidth: 2 },
       label: { show: false },
-      data: (dist.value.category || []).map((x) => ({
-        // 图例太长会截断，把「部名录·二类（AI草稿）」压成「部名录·二类」
-        name: String(x.name).replace(/（[^）]*）/g, '').trim(),
-        value: x.value
-      }))
+      data: (dist.value.category || []).map((x) => ({ name: String(x.name).replace(/（[^）]*）/g, '').trim(), value: x.value }))
     }]
   })
 
   const levelChart = echarts.init(levelBox.value)
   levelChart.setOption({
-    grid: { left: 70, right: 24, top: 16, bottom: 24 },
-    tooltip: {},
-    xAxis: { type: 'value', splitLine: { lineStyle: { color: '#f1f5f9' } } },
-    yAxis: { type: 'category', data: (dist.value.level || []).map((x) => x.name) },
+    color: PALETTE,
+    grid: { left: 76, right: 24, top: 12, bottom: 20 },
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    xAxis: { type: 'value', axisLine: { show: false }, axisLabel: baseText, splitLine, axisTick: { show: false } },
+    yAxis: { type: 'category', data: (dist.value.level || []).map((x) => x.name), axisLine, axisLabel: baseText, axisTick: { show: false } },
     series: [{
-      type: 'bar', barWidth: 18,
-      data: (dist.value.level || []).map((x) => x.value),
-      itemStyle: { borderRadius: [0, 9, 9, 0], color: '#34d399' }
+      type: 'bar', barWidth: 16,
+      data: (dist.value.level || []).map((x, i) => ({ value: x.value, itemStyle: { color: PALETTE[i % PALETTE.length], borderRadius: [0, 3, 3, 0] } }))
     }]
   })
 
@@ -332,8 +397,7 @@ function renderCharts() {
 
 function resizeAll() { charts.forEach((c) => c && c.resize()) }
 
-// 切到「病虫害库」时如果还没数据，补一次
-watch(activeTab, (v) => { if (v === 'diseases' && !rows.value.length) loadTable() })
+watch(menu, (v) => { if (v === 'overview') nextTick(renderCharts) })
 
 onMounted(async () => {
   if (token.value) { await loadAll(); await loadTable() }
@@ -342,29 +406,104 @@ onBeforeUnmount(() => window.removeEventListener('resize', resizeAll))
 </script>
 
 <style scoped>
-.login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ecfdf5, #e0f2fe); }
-.login-card { width: 380px; border-radius: 16px; }
-.login-head { display: flex; gap: 12px; align-items: center; margin-bottom: 20px; }
-.logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #34d399, #059669); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; }
-.login-title { font-size: 18px; font-weight: 700; }
-.login-sub { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-.login-tip { margin-top: 14px; font-size: 12px; color: #94a3b8; text-align: center; }
+/* ================= 登录页 ================= */
+.login-page { display: flex; height: 100vh; }
+.login-brand {
+  width: 46%; min-width: 420px; padding: 56px 52px;
+  background: linear-gradient(150deg, #0f172a 0%, #134e4a 100%);
+  color: #e2e8f0; display: flex; flex-direction: column; position: relative; overflow: hidden;
+}
+.login-brand::after {
+  content: ''; position: absolute; right: -120px; bottom: -120px;
+  width: 340px; height: 340px; border-radius: 50%;
+  background: rgba(20, 184, 166, .12);
+}
+.brand-mark {
+  width: 42px; height: 42px; border-radius: 8px; background: #0f766e;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; color: #fff; font-size: 20px;
+}
+.login-brand h1 { font-size: 28px; margin: 26px 0 8px; color: #f8fafc; font-weight: 600; letter-spacing: .5px; }
+.brand-sub { color: #94a3b8; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; margin: 0; }
+.brand-points { list-style: none; padding: 0; margin: 40px 0 0; }
+.brand-points li { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(148, 163, 184, .18); font-size: 13px; color: #cbd5e1; }
+.brand-points span { color: #2dd4bf; font-size: 11px; font-weight: 700; letter-spacing: 1px; }
+.brand-foot { margin-top: auto; font-size: 11px; color: #64748b; }
+.login-form-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
+.login-form { width: 340px; }
+.login-form h2 { font-size: 22px; color: #0f172a; margin: 0 0 6px; }
+.login-hint { font-size: 12px; color: #94a3b8; margin: 0 0 26px; }
+.login-btn { width: 100%; margin-top: 8px; }
+.login-tip { margin-top: 16px; font-size: 12px; color: #94a3b8; text-align: center; }
 
-.topbar { height: 56px; background: #fff; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; position: sticky; top: 0; z-index: 10; }
-.brand { font-weight: 700; display: flex; align-items: center; gap: 8px; }
-.dot { width: 10px; height: 10px; border-radius: 50%; background: #10b981; }
-.top-right { display: flex; align-items: center; gap: 10px; }
-.who { font-size: 13px; color: #64748b; }
-.content { padding: 8px 20px 40px; }
-.main-tabs { margin-bottom: 12px; }
-.stat { border-radius: 12px; margin-bottom: 16px; }
-.stat-label { font-size: 13px; color: #64748b; }
-.stat-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
-.stat-unit { font-size: 13px; font-weight: 400; color: #94a3b8; }
-.stat-hint { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-.chart { height: 300px; }
-.chart-sm { height: 300px; }
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-.foot-note { margin-top: 16px; font-size: 12px; color: #94a3b8; }
-.foot-note code { background: #f1f5f9; padding: 1px 6px; border-radius: 4px; }
+/* ================= 主框架 ================= */
+.layout { display: flex; height: 100vh; }
+.aside {
+  width: 216px; flex-shrink: 0; background: var(--aside); color: #cbd5e1;
+  display: flex; flex-direction: column; padding: 18px 0 12px;
+}
+.aside-logo { display: flex; align-items: center; gap: 10px; padding: 0 18px 18px; border-bottom: 1px solid #1e293b; }
+.aside-logo .mark {
+  width: 28px; height: 28px; border-radius: 6px; background: #0f766e; color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700;
+}
+.logo-text { font-size: 14px; font-weight: 600; color: #f1f5f9; letter-spacing: .5px; }
+.aside-nav { flex: 1; padding: 14px 10px; }
+.nav-group { font-size: 11px; color: #64748b; letter-spacing: 1px; padding: 10px 10px 6px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 6px;
+  font-size: 13px; color: #cbd5e1; cursor: pointer; text-decoration: none; margin-bottom: 2px;
+  transition: background .15s, color .15s;
+}
+.nav-item:hover { background: var(--aside-hover); color: #fff; }
+.nav-item.on { background: #0f766e; color: #fff; }
+.nav-ico { width: 16px; text-align: center; font-size: 13px; opacity: .9; }
+.aside-user { display: flex; align-items: center; gap: 8px; padding: 12px 14px 4px; border-top: 1px solid #1e293b; }
+.avatar { width: 30px; height: 30px; border-radius: 6px; background: #1e293b; color: #5eead4; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+.user-meta { flex: 1; line-height: 1.3; }
+.user-name { font-size: 12.5px; color: #e2e8f0; }
+.user-role { font-size: 11px; color: #64748b; }
+.logout { font-size: 12px; color: #94a3b8; cursor: pointer; }
+.logout:hover { color: #fca5a5; }
+
+.main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.header {
+  height: 52px; background: #fff; border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+}
+.crumb { font-size: 12.5px; color: #94a3b8; display: flex; gap: 8px; align-items: center; }
+.crumb i { font-style: normal; color: #cbd5e1; }
+.crumb strong { color: #0f172a; font-weight: 600; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.updated { font-size: 12px; color: #94a3b8; }
+
+.workspace { flex: 1; overflow: auto; padding: 16px 20px 32px; }
+
+/* ================= KPI ================= */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+.kpi-top { display: flex; align-items: center; justify-content: space-between; }
+.kpi-label { font-size: 12px; color: #64748b; }
+.kpi-dot { width: 7px; height: 7px; border-radius: 50%; }
+.kpi-value { font-size: 26px; font-weight: 600; color: #0f172a; margin: 8px 0 6px; letter-spacing: -.5px; }
+.kpi-value small { font-size: 12px; font-weight: 400; color: #94a3b8; margin-left: 4px; }
+.kpi-foot { display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: #94a3b8; }
+.kpi-foot em { font-style: normal; font-size: 11px; }
+.kpi-foot .up { color: #b45309; }
+.kpi-foot .down { color: #047857; }
+
+/* ================= 面板 ================= */
+.grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-top: 12px; }
+.grid-2:last-child { grid-template-columns: 1fr 1fr; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px 8px; }
+.panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 6px; }
+.panel-head h3 { font-size: 13.5px; font-weight: 600; color: #0f172a; margin: 0; }
+.panel-head p { font-size: 11.5px; color: #94a3b8; margin: 3px 0 0; }
+.chart-lg { height: 288px; }
+.chart-md { height: 264px; }
+
+@media (max-width: 1200px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-2, .grid-2:last-child { grid-template-columns: 1fr; }
+}
 </style>
