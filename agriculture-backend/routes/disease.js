@@ -422,6 +422,15 @@ function pickStable(diseases, buffer) {
   return diseases[h[0] % diseases.length]
 }
 
+
+// AI 有时把"没有病害"写成「无」「未知」这种词而不是空串，
+// 直接当病名用会出现一张卡写着"无 / 0% / 轻度危害"的怪结果。
+function normalizeDiseaseName(s) {
+  const v = String(s == null ? '' : s).trim()
+  const EMPTY = ['', '无', '未知', '未知病害', '无病害', '健康', '未识别到病害', '—', '-', 'null', 'undefined']
+  return EMPTY.indexOf(v) >= 0 ? '' : v
+}
+
 // 判断 AI 是否明确表示“图里没有可识别的植物/病害”
 function isNoPlantResult(p) {
   if (!p) return false
@@ -743,24 +752,49 @@ router.post('/recognize',
       try {
         const t0 = Date.now()
         const v = await callDeepSeekVisionFast(imageBuffer, mime)
+
+        // 画面里没有植物/没有病害：如实返回，不拼凑任何防治内容
+        if (isNoPlantResult(v)) {
+          return res.json({
+            code: 200,
+            data: {
+              name: '未识别到植物',
+              plantName: '',
+              confidence: 0,
+              level: 1,
+              levelText: '无法判断',
+              noPlant: true,
+              fast: true,
+              apiSource: 'DeepSeek 快速识别',
+              symptom: '',
+              medicines: [],
+              suggestions: ['把叶片/果实放到取景框中央，光线充足时再试'],
+              prevention: [],
+              elapsedMs: 0
+            },
+            message: '未识别到植物'
+          })
+        }
+
+        const diseaseName = normalizeDiseaseName(v.diseaseName)
         const nameOk = v.plantName && v.plantName !== '未识别到植物'
         const lv = v.level || 2
         const out = {
-          name: v.diseaseName || v.plantName || '未识别到植物',
+          name: diseaseName || (nameOk ? v.plantName : '未识别到植物'),
           plantName: v.plantName || '',
           confidence: v.confidence,
           level: lv,
           levelText: lv === 3 ? '重度危害' : lv === 1 ? '轻度危害' : '中度危害',
           apiSource: 'DeepSeek 快速识别',
           fast: true,
-          noPlant: !nameOk && !v.diseaseName,
+          noPlant: false,   // 走到这里说明 AI 给出了具体病害，上面已处理"无植物"
           elapsedMs: Date.now() - t0
         }
 
         // 从本地知识库补齐细节（不花 AI 费用，几乎零延迟）
-        if (v.diseaseName) {
+        if (diseaseName) {
           try {
-            const local = await matchLocalDisease(v.diseaseName)
+            const local = await matchLocalDisease(diseaseName)
             if (local) {
               const parseArr = (s) => {
                 try { const a = JSON.parse(s || '[]'); return Array.isArray(a) ? a : [] } catch (e) { return [] }

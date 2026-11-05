@@ -417,7 +417,10 @@ export default {
 
     applyResult(d) {
       if (!d) return
-      const noPlant = d.noPlant || /未识别到植物|识别失败/.test(String(d.name || ''))
+      const nm = String(d.name || '').trim()
+      // 老后端可能返回 name="无"、置信度 0 这种空结果，前端再兜一层
+      const emptyName = /^(无|未知|未知病害|无病害|健康|)$/.test(nm)
+      const noPlant = d.noPlant || emptyName || /未识别到植物|识别失败/.test(nm)
       if (noPlant) {
         this.status = 'idle'
         this.hint = d.note || '画面里没看到植物，请把叶片/果实对准取景框'
