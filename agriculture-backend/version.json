@@ -1,9 +1,9 @@
 {
   "android": {
-    "versionName": "1.1.0",
-    "versionCode": 110,
+    "versionName": "1.1.1",
+    "versionCode": 111,
     "url": "https://github.com/yinlang1314/hezhen/raw/main/dist/apk/hezhen-v1.1.0.apk",
-    "notes": "企业风 UI 统一（深青主色）+ 微信小程序一键登录 + 用户协议/隐私政策 + 后台一键导出 Excel + 数据看板（含风险联动）+ 天气预警与纠错复核",
+    "notes": "修复「检查更新」永远提示已是最新（settings.vue 里假 checkUpdate 覆盖了真方法）；企业风 UI + 微信登录 + 协议页 + 后台导出 + 数据看板",
     "builtAt": "2026-11-06 10:23",
     "file": "dist/apk/hezhen-v1.1.0.apk",
     "sha256": "8F87F4CA47448300B608DA4D"

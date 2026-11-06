@@ -1,4 +1,4 @@
-# APK 打包清单（v1.1.0）
+# APK 打包清单（v1.1.1）
 
 ## 一、HBuilderX 云打包参数（照抄）
 
@@ -24,12 +24,12 @@
 node scripts/finalize-apk.js
 ```
 
-它会：找最新 APK → 读版本 → 复制到 `dist/apk/hezhen-v1.1.0.apk` → 算 sha256 → 更新 `version.json`。
+它会：找最新 APK → 读版本 → 复制到 `dist/apk/hezhen-v1.1.1.apk` → 算 sha256 → 更新 `version.json`。
 
 ## 三、验证
 
 ```powershell
-& 'E:\wj\HBuilderX\plugins\uts-development-android\static\win\aapt2.exe' dump badging 'dist/apk/hezhen-v1.1.0.apk' |
+& 'E:\wj\HBuilderX\plugins\uts-development-android\static\win\aapt2.exe' dump badging 'dist/apk/hezhen-v1.1.1.apk' |
   Select-String 'package:|application-label'
 ```
 
@@ -44,6 +44,6 @@ application-label:'禾诊'
 
 ```bash
 git add dist/apk agriculture-backend/version.json docs
-git commit -m "release: v1.1.0 APK（企业风 UI + 微信登录 + 协议页）"
+git commit -m "release: v1.1.1 APK（企业风 UI + 微信登录 + 协议页）"
 git push origin main
 ```

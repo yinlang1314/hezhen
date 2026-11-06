@@ -304,11 +304,6 @@ export default {
       uni.navigateTo({ url: '/pages/profile-edit/profile-edit' })
     },
 
-    // 检查更新（逻辑可扩展为真实版本检测）
-    checkUpdate() {
-      uni.showToast({ title: '当前已是最新版本', icon: 'none' })
-    },
-
     // 关于我们（可跳转到新页面）
     about() {
       uni.showModal({
