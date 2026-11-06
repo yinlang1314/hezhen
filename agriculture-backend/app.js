@@ -169,8 +169,21 @@ app.use('/admin', adminRouter)
 // 版本信息：App 启动时比对本地 versionCode，决定是否提示更新
 app.get('/api/version', (req, res) => {
   try {
+    // 不缓存：改完 version.json 立刻生效，不用重启后端
+    const p = require.resolve('./version.json')
+    delete require.cache[p]
     const info = require('./version.json')
-    res.json({ code: 200, data: info })
+    const a = info.android || {}
+    // 顶层再放一份（老版本 App 只读顶层字段，这里做兼容）
+    res.json({
+      code: 200,
+      data: Object.assign({}, info, {
+        versionName: a.versionName,
+        versionCode: a.versionCode,
+        url: a.url,
+        notes: a.notes
+      })
+    })
   } catch (e) {
     res.json({ code: 500, message: '版本信息读取失败' })
   }
