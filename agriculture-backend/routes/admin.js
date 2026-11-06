@@ -174,15 +174,16 @@ router.get('/', checkAuth, async (req, res) => {
       dbGet('SELECT COUNT(*) c FROM corrections')
     ]);
 
-    // 最近 7 天识别趋势
-    const rows = await dbAll(`
-      SELECT date(create_time) AS day, COUNT(*) AS cnt FROM histories
-      WHERE create_time >= datetime('now', '-6 days') GROUP BY day
-    `);
+    // 最近 30 天识别趋势（起始日期在 JS 里算，用参数绑定 —— 两种数据库都能跑）
+    const since = new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10);
+    const rows = await dbAll(
+      'SELECT date(create_time) AS day, COUNT(*) AS cnt FROM histories WHERE create_time >= ? GROUP BY date(create_time)',
+      [since]
+    );
     const map = {};
     rows.forEach((r) => { map[r.day] = r.cnt; });
     const trend = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 29; i >= 0; i--) {
       const d = new Date(Date.now() - i * 86400000);
       const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
       trend.push({ day: key.slice(5), count: map[key] || 0 });

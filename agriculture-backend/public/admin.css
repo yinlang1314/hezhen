@@ -19,10 +19,22 @@ a:hover { text-decoration: underline; }
   position: sticky; top: 0; z-index: 50;
 }
 .topbar .brand { font-weight: 800; font-size: 16px; letter-spacing: .5px; margin-right: 6px; white-space: nowrap; }
-.topbar nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
+.topbar nav {
+  display: flex; gap: 2px; flex: 1;
+  flex-wrap: nowrap;          /* 单行，超宽横向滚动，不要换到第二行 */
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.topbar nav::-webkit-scrollbar { display: none; }
 .topbar nav a {
-  color: rgba(255,255,255,.85); padding: 8px 14px; border-radius: 8px;
-  font-size: 13.5px; text-decoration: none; transition: all .15s;
+  color: rgba(255,255,255,.82); padding: 7px 12px; border-radius: 6px;
+  font-size: 13px; text-decoration: none; transition: all .15s;
+  white-space: nowrap; flex-shrink: 0;
+}
+.topbar nav a.on {
+  background: #fff; color: #047857; font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12);
 }
 .topbar nav a:hover { background: rgba(255,255,255,.15); color: #fff; text-decoration: none; }
 .topbar nav a.on { background: rgba(255,255,255,.22); color: #fff; font-weight: 700; }
@@ -315,3 +327,99 @@ label { display: block; font-size: 12.5px; color: #64748b; margin-bottom: 6px; f
   box-sizing: border-box;
 }
 .thumb-empty:hover { background: #E2E8F0; color: #475569; border-color: #94A3B8; }
+
+
+/* ==================================================================
+   企业风补充样式（2026-11）：工具栏 / 表格 / 标签统一
+   ================================================================== */
+
+/* 页面头 */
+.page-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; margin: 0 0 16px; flex-wrap: wrap;
+}
+.page-head h1 { margin: 0; font-size: 20px; font-weight: 700; color: #0f172a; }
+.page-head .sub { margin-top: 4px; font-size: 12.5px; color: #94a3b8; }
+.page-head .actions { display: flex; gap: 8px; align-items: center; }
+
+/* 工具栏 */
+.toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 10px 12px; margin-bottom: 12px;
+}
+.toolbar input[type="text"] {
+  height: 32px; padding: 0 10px; border: 1px solid #e2e8f0; border-radius: 6px;
+  font-size: 13px; color: #0f172a; background: #fff; min-width: 220px;
+}
+.toolbar input[type="text"]:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
+.toolbar .spacer { flex: 1; }
+
+/* 复选框 + 文字 */
+.check-line { display: inline-flex; align-items: center; gap: 6px; margin: 0; cursor: pointer; font-size: 13px; color: #334155; white-space: nowrap; }
+/* .toolbar input 有 min-width:180px，会把复选框撑成 180px 宽 —— 这里单独兜住 */
+.toolbar input[type="checkbox"], .check-line input[type="checkbox"] { min-width: 0 !important; width: 15px !important; height: 15px !important; padding: 0 !important; margin: 0 !important; }
+.check-line input[type="checkbox"] { width: 15px; height: 15px; accent-color: #0f766e; cursor: pointer; }
+
+/* 卡片 */
+.card { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid #e2e8f0;
+  font-size: 13.5px; font-weight: 600; color: #0f172a;
+}
+.card-head .count { font-weight: 400; color: #94a3b8; font-size: 12.5px; margin-left: 6px; }
+
+/* 表格 */
+.table-wrap { overflow: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+table th {
+  position: sticky; top: 0; z-index: 1;
+  background: #f8fafc; color: #475569; font-weight: 600; font-size: 12.5px;
+  text-align: left; padding: 10px 12px; border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; color: #334155; }
+table tbody tr:hover td { background: #f8fafc; }
+table td.nowrap { white-space: nowrap; }
+.thumb { width: 38px; height: 38px; border-radius: 6px; object-fit: cover; display: block; background: #f1f5f9; }
+
+/* 标签 */
+.tag {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 12px; line-height: 18px; white-space: nowrap; font-weight: 500;
+}
+.tag-green { background: #d1fae5; color: #047857; }
+.tag-blue { background: #dbeafe; color: #1d4ed8; }
+.tag-orange { background: #ffedd5; color: #b45309; }
+.tag-red { background: #fee2e2; color: #b91c1c; }
+.tag-gray { background: #f1f5f9; color: #64748b; }
+.tag-plain { background: transparent; color: #64748b; border: 1px solid #e2e8f0; }
+
+/* 文本链接按钮 */
+.btn-link { background: none; border: none; color: #0f766e; cursor: pointer; font-size: 12.5px; padding: 4px 6px; border-radius: 4px; }
+.btn-link:hover { background: #ecfdf5; }
+.btn-link.danger { color: #b91c1c; }
+.btn-link.danger:hover { background: #fef2f2; }
+
+/* 小按钮 */
+.btn-sm { padding: 5px 10px; font-size: 12.5px; border-radius: 6px; }
+.btn-danger-ghost { background: #fff; color: #b91c1c; border: 1px solid #fecaca; }
+.btn-danger-ghost:hover { background: #fef2f2; }
+.muted { color: #94a3b8; font-size: 12.5px; }
+.ellipsis { max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-block; vertical-align: middle; }
+
+/* 表格里的操作按钮统一轻量样式（各页面模板不用改） */
+table .btn.btn-sm {
+  padding: 3px 9px; font-size: 12px; border-radius: 5px; line-height: 18px;
+}
+table .btn-danger.btn-sm {
+  background: #fff; color: #b91c1c; border: 1px solid #fecaca; box-shadow: none;
+}
+table .btn-danger.btn-sm:hover { background: #fef2f2; }
+table .btn-ghost.btn-sm { color: #334155; }
+table a.btn { text-decoration: none; display: inline-block; }
+
+/* 页面标题统一 */
+.page-title { font-size: 20px !important; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+.page-sub { font-size: 12.5px; color: #94a3b8; margin-bottom: 16px; }

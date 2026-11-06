@@ -4,54 +4,65 @@
 </head><body>
 <%- include('partials/nav', { current: 'histories', adminName: adminName }) %>
 <div class="wrap">
-  <h1 class="page-title">识别历史</h1>
-  <div class="page-sub">共 <%= total %> 条记录。可勾选批量删除，也可导出 CSV 用于统计或写报告</div>
+
+  <div class="page-head">
+    <div>
+      <h1>识别历史</h1>
+      <div class="sub">共 <%= total %> 条记录 · 支持搜索、批量删除、导出 CSV</div>
+    </div>
+    <div class="actions">
+      <a class="btn btn-ghost btn-sm" href="/admin/histories/export.csv">⬇ 导出 CSV</a>
+      <a class="btn btn-ghost btn-sm" href="/admin" style="text-decoration:none">返回概览</a>
+    </div>
+  </div>
 
   <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
   <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
 
   <form class="toolbar" method="get" action="/admin/histories">
-    <input type="text" name="q" value="<%= keyword %>" placeholder="搜索病害名或用户名..." />
-    <label style="display:flex;align-items:center;gap:6px;margin:0;cursor:pointer">
-      <input type="checkbox" name="corrected" value="1" <%= onlyCorrected ? 'checked' : '' %> style="width:auto" />
-      <span style="font-weight:400;color:#334155">只看用户已纠正的</span>
+    <input type="text" name="q" value="<%= keyword %>" placeholder="搜索病害名或用户名…" />
+    <label class="check-line">
+      <input type="checkbox" name="corrected" value="1" <%= onlyCorrected ? 'checked' : '' %> />
+      只看用户已纠正的
     </label>
-    <button class="btn btn-primary" type="submit">筛选</button>
-    <% if (keyword || onlyCorrected) { %><a class="btn btn-ghost" href="/admin/histories">重置</a><% } %>
-    <a class="btn btn-ghost" href="/admin/histories/export.csv" style="margin-left:auto">⬇ 导出 CSV</a>
+    <button class="btn btn-primary btn-sm" type="submit">筛选</button>
+    <% if (keyword || onlyCorrected) { %><a class="btn btn-ghost btn-sm" href="/admin/histories">清除条件</a><% } %>
+    <span class="spacer"></span>
+    <% if (keyword || onlyCorrected) { %><span class="muted">筛选后 <%= total %> 条</span><% } %>
   </form>
 
   <form method="post" action="/admin/histories/batch-delete" id="batchForm">
   <div class="card">
     <div class="card-head">
-      <span>记录列表</span>
-      <span>
-        <button class="btn btn-danger btn-sm" type="submit"
-                onclick="return confirm('确定删除选中的识别记录吗？对应的图片文件也会一并删除。')">批量删除选中</button>
-      </span>
+      <span>记录列表<span class="count">共 <%= total %> 条</span></span>
+      <button class="btn btn-danger-ghost btn-sm" type="submit"
+              onclick="return confirm('确定删除选中的识别记录吗？对应的图片文件也会一并删除。')">批量删除选中</button>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th style="width:36px"><input type="checkbox" onclick="var c=document.querySelectorAll('.rowck');for(var i=0;i<c.length;i++)c[i].checked=this.checked" style="width:auto"></th>
-            <th style="width:60px">图片</th>
-            <th>用户</th>
+            <th style="width:34px">
+              <input type="checkbox" class="ck-all"
+                     onclick="var c=document.querySelectorAll('.rowck');for(var i=0;i<c.length;i++)c[i].checked=this.checked">
+            </th>
+            <th style="width:56px">图片</th>
+            <th style="width:110px">用户</th>
             <th>识别结果</th>
-            <th>寄主</th>
-            <th>置信度</th>
-            <th>等级</th>
-            <th>来源</th>
-            <th>时间</th>
-            <th style="text-align:right">操作</th>
+            <th style="width:140px">寄主</th>
+            <th style="width:86px">置信度</th>
+            <th style="width:96px">危害等级</th>
+            <th style="width:200px">来源</th>
+            <th style="width:150px">时间</th>
+            <th style="width:70px;text-align:right">操作</th>
           </tr>
         </thead>
         <tbody>
           <% if (!rows.length) { %>
-            <tr><td colspan="10" class="empty-row">暂无识别记录</td></tr>
+            <tr><td colspan="10" class="empty-row" style="text-align:center;color:#94a3b8;padding:40px 0">暂无识别记录</td></tr>
           <% } else { rows.forEach(function (r) { %>
             <tr>
-              <td><input class="rowck" type="checkbox" name="ids" value="<%= r.id %>" style="width:auto"></td>
+              <td><input class="rowck" type="checkbox" name="ids" value="<%= r.id %>"></td>
               <td>
                 <% if (r.image_url) { %>
                   <a href="<%= String(r.image_url).replace(/^https?:\/\/[^/]+/, '') %>" target="_blank">
@@ -61,34 +72,42 @@
               </td>
               <td>
                 <% if (r.user_id) { %><a href="/admin/users/<%= r.user_id %>"><%= r.username || ('用户' + r.user_id) %></a>
-                <% } else { %><span style="color:#94a3b8">未登录</span><% } %>
+                <% } else { %><span class="muted">未登录</span><% } %>
               </td>
-              <td style="font-weight:600"><%= r.disease_name || '-' %>
-                <% if (r.corrected === '1') { %><span class="tag tag-green" style="margin-left:4px">人工纠正</span><% } %>
+              <td>
+                <span style="font-weight:600;color:#0f172a"><%= r.disease_name || '-' %></span>
+                <% if (r.corrected === '1') { %><span class="tag tag-green" style="margin-left:6px">人工纠正</span><% } %>
               </td>
-              <td><%= r.plant_name || '-' %></td>
-              <td><span class="tag tag-blue"><%= r.confidence || 0 %>%</span></td>
-              <td><%= r.level_text || '-' %></td>
-              <td style="font-size:12px;color:#64748b"><%= r.ai_source || '-' %></td>
-              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time || '-' %></td>
+              <td><span class="ellipsis" title="<%= r.plant_name || '' %>"><%= r.plant_name || '-' %></span></td>
+              <td>
+                <% var conf = Number(r.confidence) || 0; var confCls = conf >= 80 ? 'tag-green' : conf >= 60 ? 'tag-blue' : conf > 0 ? 'tag-orange' : 'tag-gray'; %>
+                <span class="tag <%= confCls %>"><%= conf %>%</span>
+              </td>
+              <td>
+                <% var lv = String(r.level_text || ''); var lvCls = lv.indexOf('重') === 0 ? 'tag-red' : lv.indexOf('中') === 0 ? 'tag-orange' : lv.indexOf('轻') === 0 ? 'tag-green' : 'tag-gray'; %>
+                <span class="tag <%= lvCls %>"><%= lv || '无法判断' %></span>
+              </td>
+              <td><span class="ellipsis muted" title="<%= r.ai_source || '' %>"><%= r.ai_source || '-' %></span></td>
+              <td class="nowrap muted"><%= r.create_time || '-' %></td>
               <td class="nowrap" style="text-align:right">
-                <button class="btn btn-danger btn-sm" type="submit" formaction="/admin/histories/<%= r.id %>/delete"
-                        onclick="return confirm('确定删除这条记录吗？')">删除</button>
+                <button class="btn-link danger" type="submit" formaction="/admin/histories/<%= r.id %>/delete"
+                        onclick="return confirm('删除这条记录？对应图片也会删除。')">删除</button>
               </td>
             </tr>
-          <% }) } %>
+          <% }); } %>
         </tbody>
       </table>
-    </div>
-
-    <% if (totalPages > 1) { %>
-    <div class="pager">
-      <% if (page > 1) { %><a href="/admin/histories?page=<%= page - 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= onlyCorrected ? '&corrected=1' : '' %>">‹ 上一页</a><% } %>
-      <span class="cur"><%= page %> / <%= totalPages %></span>
-      <% if (page < totalPages) { %><a href="/admin/histories?page=<%= page + 1 %><%= keyword ? '&q=' + encodeURIComponent(keyword) : '' %><%= onlyCorrected ? '&corrected=1' : '' %>">下一页 ›</a><% } %>
-    </div>
-    <% } %>
-  </div>
+    </div><%# table-wrap %>
+  </div><%# card %>
   </form>
+
+  <% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+  <div class="pager">
+    <% if (page > 1) { %><a class="btn btn-ghost btn-sm" href="?page=<%= page - 1 %>&q=<%= encodeURIComponent(keyword || '') %>&corrected=<%= onlyCorrected ? 1 : '' %>">上一页</a><% } %>
+    <span class="muted">第 <%= page %> / <%= totalPages %> 页</span>
+    <% if (page < totalPages) { %><a class="btn btn-ghost btn-sm" href="?page=<%= page + 1 %>&q=<%= encodeURIComponent(keyword || '') %>&corrected=<%= onlyCorrected ? 1 : '' %>">下一页</a><% } %>
+  </div>
+  <% } %>
+
 </div>
 </body></html>

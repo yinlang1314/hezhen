@@ -16,14 +16,15 @@
 
   <div class="stat-grid">
     <div class="card" style="margin:0">
-      <div class="card-head">最近 7 天识别趋势</div>
+      <div class="card-head">最近 30 天识别趋势</div>
       <div class="card-body">
         <div style="display:flex;align-items:flex-end;justify-content:space-between;height:130px;gap:8px">
-          <% trend.forEach(function (d) { %>
+          <% trend.forEach(function (d, i) { %>
           <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%">
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:4px"><%= d.count %></div>
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:4px;height:14px"><%= d.count > 0 ? d.count : '' %></div>
             <div style="width:100%;max-width:42px;border-radius:8px 8px 0 0;background:linear-gradient(180deg,#6ee7b7,#10b981);height:<%= Math.max(4, Math.round(d.count / maxTrend * 88)) %>%"></div>
-            <div style="font-size:11px;color:#94a3b8;margin-top:6px"><%= d.day %></div>
+            <%# 30 根柱子，日期标签每 5 天显示一次，避免挤成一团 %>
+            <div style="font-size:10px;color:#94a3b8;margin-top:6px;height:14px"><%= (i % 5 === 0 || i === trend.length - 1) ? d.day : '' %></div>
           </div>
           <% }) %>
         </div>
