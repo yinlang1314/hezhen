@@ -49,6 +49,9 @@
         <a :class="['nav-item', { on: menu === 'diseases' }]" @click="switchMenu('diseases')">
           <span class="nav-ico">▤</span><span v-show="!collapsed">病虫害库</span>
         </a>
+        <a :class="['nav-item', { on: menu === 'risk' }]" @click="switchMenu('risk')">
+          <span class="nav-ico">◈</span><span v-show="!collapsed">风险联动</span>
+        </a>
         <div class="nav-group">系统</div>
         <a class="nav-item" href="http://localhost:3000/admin" target="_blank">
           <span class="nav-ico">↗</span><span v-show="!collapsed">管理后台</span>
@@ -69,7 +72,7 @@
         <div class="crumb">
           <a class="crumb-link" @click="switchMenu('overview')">数据看板</a>
           <i>/</i>
-          <span class="crumb-cur">{{ menu === 'overview' ? '运营总览' : '病虫害库' }}</span>
+          <span class="crumb-cur">{{ menu === 'overview' ? '运营总览' : menu === 'diseases' ? '病虫害库' : '风险联动' }}</span>
         </div>
         <div class="header-right">
           <span class="updated" v-if="lastUpdated">更新于 {{ lastUpdated }}</span>
@@ -153,6 +156,77 @@
           </div>
         </template>
 
+        <!-- ===== 风险联动（天气风险 × 实际识别） ===== -->
+        <template v-if="menu === 'risk'">
+          <div class="risk-topbar">
+            <div class="risk-intro">
+              <h3>天气风险 × 识别数据</h3>
+              <p>用真实天气预报算出未来 3 天风险，并对照最近 30 天实际识别量，判断预警是否落到了真问题上</p>
+            </div>
+            <div class="risk-controls">
+              <el-select v-model="riskRegion" size="small" style="width:130px" @change="loadRisk">
+                <el-option v-for="r in regions" :key="r" :label="r" :value="r" />
+              </el-select>
+              <el-button size="small" :loading="riskLoading" @click="loadRisk">刷新</el-button>
+            </div>
+          </div>
+
+          <div class="risk-days" v-if="riskData">
+            <div class="risk-day" v-for="d in riskData.days" :key="d.date">
+              <div class="rd-date">{{ d.date.slice(5) }}</div>
+              <div class="rd-weather">{{ d.tmean }}℃ · 湿度 {{ d.humidity }}% · 雨 {{ d.rain }}mm</div>
+              <div class="rd-count"><b>{{ d.count }}</b> 条风险</div>
+            </div>
+          </div>
+
+          <div class="grid-2 risk-grid">
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>风险病害 × 近 30 天识别量</h3>
+                  <p>{{ riskRegion }} · 越靠右上 = 天气风险高且确实被识别到</p>
+                </div>
+              </header>
+              <div ref="riskScatter" class="chart-lg"></div>
+            </section>
+
+            <section class="panel">
+              <header class="panel-head">
+                <div>
+                  <h3>联动清单</h3>
+                  <p>按风险分排序，附识别次数</p>
+                </div>
+              </header>
+              <el-table :data="riskRows" size="small" height="300" stripe>
+                <el-table-column prop="name" label="病害" min-width="150" show-overflow-tooltip />
+                <el-table-column label="风险" width="96">
+                  <template #default="{ row }">
+                    <el-tag size="small" :type="row.level === 3 ? 'danger' : row.level === 2 ? 'warning' : 'success'" effect="plain">
+                      {{ row.levelText }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="score" label="分数" width="72" align="right" />
+                <el-table-column prop="recentCount" label="近30天识别" width="100" align="right" />
+              </el-table>
+            </section>
+          </div>
+
+          <section class="panel" v-if="riskData && riskData.recognizedOnly.length">
+            <header class="panel-head">
+              <div>
+                <h3>有识别但当前未达风险阈值</h3>
+                <p>可能是季节已过、或规则暂未覆盖 —— 值得补充规则</p>
+              </div>
+            </header>
+            <div class="ro-list">
+              <span class="ro-item" v-for="x in riskData.recognizedOnly" :key="x.name">
+                {{ x.name }} <em>{{ x.recentCount }} 次</em>
+              </span>
+            </div>
+          </section>
+        </template>
+
         <!-- ===== 病虫害库（ProTable） ===== -->
         <template v-else>
           <ProTable
@@ -187,7 +261,7 @@
 import { ref, computed, watch, onMounted, nextTick, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { login, getToken, setToken, clearToken, overview, trend, distribution, top, diseases } from './api.js'
+import { login, getToken, setToken, clearToken, overview, trend, distribution, top, diseases, riskAnalysis } from './api.js'
 import ProTable from './components/ProTable.vue'
 
 const token = ref(getToken())
@@ -207,6 +281,14 @@ const trendDays = ref(30)
 const dist = ref({ category: [], level: [], verified: [] })
 const topList = ref([])
 const topKeyword = ref('')
+
+// ===== 风险联动 =====
+const riskRegion = ref('江西省')
+const regions = ['江西省', '广东省', '湖南省', '福建省', '浙江省']
+const riskLoading = ref(false)
+const riskData = ref(null)
+const riskScatter = ref(null)
+const riskRows = computed(() => (riskData.value && riskData.value.items) || [])
 
 const rows = ref([])
 const tableTotal = ref(0)
@@ -314,6 +396,67 @@ async function loadAll() {
   }
 }
 
+// 拉取风险联动数据并画散点图
+async function loadRisk() {
+  riskLoading.value = true
+  try {
+    riskData.value = await riskAnalysis(riskRegion.value)
+    await nextTick()
+    renderRiskChart()
+  } catch (e) {
+    ElMessage.error(e.message || '风险数据加载失败')
+  } finally {
+    riskLoading.value = false
+  }
+}
+
+function renderRiskChart() {
+  if (!riskScatter.value || !riskData.value) return
+  const items = riskData.value.items || []
+  const chart = echarts.init(riskScatter.value)
+  const colorOf = (level) => (level === 3 ? '#b91c1c' : level === 2 ? '#b45309' : '#047857')
+
+  chart.setOption({
+    grid: { left: 56, right: 24, top: 24, bottom: 40 },
+    tooltip: {
+      formatter: (p) => {
+        const d = items[p.dataIndex]
+        return d.name + '<br/>风险分 ' + d.score + '（' + d.levelText + '）<br/>近 30 天识别 ' + d.recentCount + ' 次'
+      }
+    },
+    xAxis: {
+      type: 'value', name: '近 30 天识别次数', nameLocation: 'middle', nameGap: 26,
+      nameTextStyle: { fontSize: 11, color: '#94a3b8' },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+      axisLabel: { fontSize: 11, color: '#64748b' },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+      min: 0
+    },
+    yAxis: {
+      type: 'value', name: '风险分', nameTextStyle: { fontSize: 11, color: '#94a3b8' },
+      axisLine: { lineStyle: { color: '#e2e8f0' } },
+      axisLabel: { fontSize: 11, color: '#64748b' },
+      splitLine: { lineStyle: { color: '#f1f5f9' } },
+      min: 0, max: 100
+    },
+    series: [{
+      type: 'scatter',
+      symbolSize: (val, p2) => 14 + Math.min(16, items[p2.dataIndex].recentCount * 3),
+      // 识别次数是整数，很多点会重合在 x=0；按序号加一点点偏移，视觉上才分得开
+      data: items.map((x, i) => ({
+        value: [x.recentCount + (i % 3) * 0.06, x.score],
+        itemStyle: { color: colorOf(x.level), opacity: .85, borderColor: '#fff', borderWidth: 1.5 }
+      })),
+      label: {
+        show: true, position: 'top', fontSize: 10, color: '#475569',
+        formatter: (p) => (items[p.dataIndex].recentCount > 0 ? items[p.dataIndex].name : '')
+      },
+      labelLayout: { hideOverlap: true, moveOverlap: 'shiftY' }
+    }]
+  })
+  charts.push(chart)
+}
+
 async function loadTable() {
   tableLoading.value = true
   try {
@@ -342,6 +485,7 @@ function toggleCollapse() {
 function switchMenu(key) {
   menu.value = key
   if (key === 'diseases' && !rows.value.length) loadTable()
+  if (key === 'risk' && !riskData.value) loadRisk()
 }
 
 // 导出当前工作区为 PNG（答辩贴 PPT / 发群都方便）
@@ -444,7 +588,10 @@ function renderCharts() {
 
 function resizeAll() { charts.forEach((c) => c && c.resize()) }
 
-watch(menu, (v) => { if (v === 'overview') nextTick(renderCharts) })
+watch(menu, (v) => {
+  if (v === 'overview') nextTick(renderCharts)
+  if (v === 'risk' && riskData.value) nextTick(renderRiskChart)
+})
 
 onMounted(async () => {
   const saved = localStorage.getItem('dash_collapsed')
@@ -566,6 +713,24 @@ onBeforeUnmount(() => {
 .kpi-foot em { font-style: normal; font-size: 11px; }
 .kpi-foot .up { color: #b45309; }
 .kpi-foot .down { color: #047857; }
+
+/* ================= 风险联动 ================= */
+.risk-topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.risk-intro h3 { margin: 0; font-size: 15px; color: #0f172a; }
+.risk-intro p { margin: 4px 0 0; font-size: 12px; color: #94a3b8; max-width: 720px; line-height: 1.6; }
+.risk-controls { display: flex; gap: 8px; }
+.risk-days { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 12px; }
+.risk-day { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+.rd-date { font-size: 12px; color: #94a3b8; }
+.rd-weather { font-size: 13px; color: #0f172a; margin: 6px 0 4px; }
+.rd-count { font-size: 12px; color: #64748b; }
+.rd-count b { color: #0f766e; font-size: 15px; }
+.risk-grid { grid-template-columns: 1.5fr 1fr; }
+.ro-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 0 12px; }
+.ro-item {
+  font-size: 12px; color: #475569; background: #f1f5f9; border-radius: 4px; padding: 5px 10px;
+}
+.ro-item em { font-style: normal; color: #94a3b8; margin-left: 4px; }
 
 /* ================= 面板 ================= */
 .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-top: 12px; }

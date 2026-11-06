@@ -34,4 +34,8 @@ export const diseases = (params = {}) => {
   return request('/api/dashboard/diseases?' + q.toString())
 }
 
+// 天气风险 × 识别量关联分析
+export const riskAnalysis = (region) =>
+  request('/api/dashboard/risk-analysis?region=' + encodeURIComponent(region || '江西省'))
+
 export const top = (limit = 10) => request('/api/dashboard/top?limit=' + limit)

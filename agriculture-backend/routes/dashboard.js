@@ -159,4 +159,86 @@ router.get('/export/diseases.csv', async (req, res) => {
   }
 })
 
+// 天气风险 × 实际识别：把「当前天气算出的风险」和「最近识别量」放一起看
+// 输出：地区、未来 3 天风险、以及每个风险病害的近 30 天识别次数
+router.get('/risk-analysis', async (req, res) => {
+  try {
+    const { REGIONS, getForecast } = require('../lib/weather')
+    const { computeRisks } = require('../lib/risk')
+
+    const region = String(req.query.region || '江西省')
+    if (!REGIONS[region]) {
+      return res.json({ code: 400, message: '暂不支持该地区', data: { supported: Object.keys(REGIONS) } })
+    }
+
+    // 外部天气接口偶发超时，重试一次再报错
+    let forecast
+    try {
+      forecast = await getForecast(region)
+    } catch (e1) {
+      console.warn('天气接口第一次失败，重试：' + e1.message)
+      forecast = await getForecast(region)
+    }
+    const rules = await dbAll(`SELECT r.* FROM risk_rules r JOIN diseases d ON d.id = r.disease_id
+      WHERE r.enabled = 1 AND d.verified = 1`)
+    const days = computeRisks(forecast.days, rules)
+
+    // 最近 30 天各病害识别次数
+    const since = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
+    const counts = await dbAll(
+      'SELECT disease_name AS name, COUNT(*) AS n FROM histories WHERE create_time >= ? GROUP BY disease_name',
+      [since]
+    )
+    const countMap = {}
+    counts.forEach((c) => { countMap[String(c.name)] = Number(c.n) })
+
+    // 取未来 3 天里每条规则的最高等级/分数
+    const byDisease = {}
+    days.forEach((d) => {
+      d.items.forEach((it) => {
+        const cur = byDisease[it.name]
+        if (!cur || it.score > cur.score) {
+          byDisease[it.name] = {
+            name: it.name,
+            diseaseId: it.diseaseId,
+            level: it.level,
+            levelText: it.levelText,
+            score: it.score,
+            reasons: it.reasons,
+            day: d.date
+          }
+        }
+      })
+    })
+
+    const items = Object.values(byDisease)
+      .map((x) => Object.assign({}, x, { recentCount: countMap[x.name] || 0 }))
+      .sort((a, b) => b.score - a.score || b.recentCount - a.recentCount)
+
+    // 有识别但当前无风险的病害（提醒：可能是历史病、或规则没覆盖）
+    const riskyNames = new Set(items.map((x) => x.name))
+    const recognizedOnly = Object.keys(countMap)
+      .filter((n) => !riskyNames.has(n) && countMap[n] > 0)
+      .map((n) => ({ name: n, recentCount: countMap[n] }))
+      .sort((a, b) => b.recentCount - a.recentCount)
+      .slice(0, 8)
+
+    res.json({
+      code: 200,
+      data: {
+        region,
+        city: forecast.city,
+        days: days.map((d) => ({ date: d.date, tmean: d.tmean, humidity: d.humidity, rain: d.rain, count: d.items.length })),
+        items,
+        recognizedOnly,
+        ruleCount: rules.length,
+        updated: forecast.updated
+      }
+    })
+  } catch (e) {
+    console.error('风险联动查询失败:', e.message)
+    res.json({ code: 500, message: '风险联动查询失败：' + e.message })
+  }
+})
+
 module.exports = router
