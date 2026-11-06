@@ -3,6 +3,7 @@ import vue from '@vitejs/plugin-vue'
 
 // 开发/预览都把 /api 代理到后端 3000，避免 CORS
 export default defineConfig({
+  base: './',            // 相对路径：产物可以放在任意子目录（如 /dashboard）
   plugins: [vue()],
   server: {
     port: 3002,

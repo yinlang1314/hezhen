@@ -108,6 +108,10 @@ app.use((req, res, next) => {
   next()
 })
 
+// 数据看板（Vue 构建产物）：和后端同端口，访问 /dashboard
+app.use('/dashboard', express.static(path.join(__dirname, 'public', 'dashboard'), { index: 'index.html' }))
+app.get('/dashboard/*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard', 'index.html')))
+
 const staticHandler = express.static(path.join(__dirname, 'public'), { index: false })
 app.use((req, res, next) => {
   if (req.path.indexOf('/uploads/') === 0) return next()   // 交给后面的鉴权路由
