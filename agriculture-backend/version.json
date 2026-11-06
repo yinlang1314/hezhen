@@ -2,11 +2,11 @@
   "android": {
     "versionName": "1.1.1",
     "versionCode": 111,
-    "url": "https://github.com/yinlang1314/hezhen/raw/main/dist/apk/hezhen-v1.1.0.apk",
+    "url": "https://github.com/yinlang1314/hezhen/raw/main/dist/apk/hezhen-v1.1.1.apk",
     "notes": "修复「检查更新」永远提示已是最新（settings.vue 里假 checkUpdate 覆盖了真方法）；企业风 UI + 微信登录 + 协议页 + 后台导出 + 数据看板",
-    "builtAt": "2026-11-06 10:23",
-    "file": "dist/apk/hezhen-v1.1.0.apk",
-    "sha256": "8F87F4CA47448300B608DA4D"
+    "builtAt": "2026-11-06 10:38",
+    "file": "dist/apk/hezhen-v1.1.1.apk",
+    "sha256": "45206CBCFC72457B4674B2A8"
   },
   "web": {
     "versionName": "1.0.1",
