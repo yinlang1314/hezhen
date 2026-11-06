@@ -26,14 +26,15 @@ export default {
    图标：全部使用 emoji / CSS 绘制，不依赖图片文件（项目 static 目录缺图）
    ================================================================== */
 page {
-  --c-primary: #10B981;
-  --c-primary-dark: #059669;
-  --c-primary-deep: #065F46;
-  --c-primary-soft: #D1FAE5;
-  --c-primary-mist: #ECFDF5;
+  /* 主色与后台/看板统一：深青（#0F766E），不是亮绿 */
+  --c-primary: #0F766E;
+  --c-primary-dark: #115E59;
+  --c-primary-deep: #134E4A;
+  --c-primary-soft: #CCFBF1;
+  --c-primary-mist: #F0FDFA;
   --c-accent: #F59E0B;
   --c-accent-soft: #FEF3C7;
-  --c-danger: #EF4444;
+  --c-danger: #B91C1C;
   --c-danger-soft: #FEE2E2;
   --c-info: #3B82F6;
   --c-info-soft: #DBEAFE;
@@ -44,19 +45,20 @@ page {
   --t-faint: #94A3B8;
   --t-invert: #FFFFFF;
 
-  --bg-page: #F4F8F6;
+  --bg-page: #F5F7FA;
   --bg-card: #FFFFFF;
   --bg-soft: #F8FAFC;
 
-  --line: #E8EDF2;
+  --line: #E2E8F0;
 
-  --r-sm: 12rpx;
-  --r-md: 20rpx;
-  --r-lg: 28rpx;
-  --r-xl: 40rpx;
+  /* 企业风：圆角收小、阴影变淡，靠边框和留白撑层次 */
+  --r-sm: 8rpx;
+  --r-md: 12rpx;
+  --r-lg: 16rpx;
+  --r-xl: 24rpx;
 
-  --sh-card: 0 6rpx 28rpx rgba(15, 23, 42, 0.06);
-  --sh-float: 0 12rpx 40rpx rgba(16, 185, 129, 0.18);
+  --sh-card: 0 2rpx 10rpx rgba(15, 23, 42, 0.04);
+  --sh-float: 0 8rpx 24rpx rgba(15, 118, 110, 0.16);
   --sh-nav: 0 -6rpx 30rpx rgba(15, 23, 42, 0.08);
 }
 
@@ -86,6 +88,7 @@ page {
 .card {
   background: var(--bg-card);
   border-radius: var(--r-lg);
+  border: 1rpx solid var(--line);
   box-shadow: var(--sh-card);
 }
 

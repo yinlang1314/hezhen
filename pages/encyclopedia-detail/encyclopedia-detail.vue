@@ -516,11 +516,11 @@ export default {
   gap: 4rpx;
   padding: 4rpx 14rpx;
   border-radius: 20rpx;
-  background: #ECFDF5;
-  border: 1px solid #A7F3D0;
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
   font-size: 21rpx;
   font-weight: 600;
-  color: #059669;
+  color: #0f766e;
   line-height: 1.5;
 }
 .verify-check {
@@ -641,7 +641,7 @@ export default {
 .item-header { display: flex; align-items: center; margin-bottom: 18rpx; position: relative; padding-left: 18rpx; }
 .item-header::before {
   content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
-  width: 6rpx; height: 26rpx; border-radius: 3rpx; background: var(--c-primary, #10B981);
+  width: 6rpx; height: 26rpx; border-radius: 3rpx; background: var(--c-primary, #0f766e);
 }
 .item-title { font-size: 30rpx; font-weight: 700; color: var(--t-strong); }
 .item-content { font-size: 27rpx; color: #334155; line-height: 1.8; }
@@ -688,12 +688,12 @@ export default {
 .collect-btn.on { border-color: #FCA5A5; background: #FEF2F2; }
 .collect-btn-icon { width: 34rpx; height: 34rpx; }
 .collect-btn-text { font-size: 22rpx; color: var(--t-sub); margin-top: 4rpx; }
-.collect-btn.on .collect-btn-text { color: #DC2626; }
+.collect-btn.on .collect-btn-text { color: #b91c1c; }
 
 .identify-btn {
   flex: 1;
   height: 92rpx;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   color: #fff;
   border: none;
   border-radius: 20rpx;
@@ -715,8 +715,8 @@ export default {
 .med-head { display: flex; align-items: center; margin-bottom: 10rpx; }
 .med-name { flex: 1; font-size: 28rpx; font-weight: 600; color: var(--t-main); }
 .med-tox {
-  flex-shrink: 0; font-size: 20rpx; color: #047857;
-  background: var(--c-primary-soft, #D1FAE5); border-radius: 6rpx;
+  flex-shrink: 0; font-size: 20rpx; color: #0f766e;
+  background: var(--c-primary-soft, #ccfbf1); border-radius: 6rpx;
   padding: 2rpx 10rpx; margin-left: 10rpx;
 }
 .med-usage { display: block; font-size: 26rpx; color: #475569; line-height: 1.75; padding-left: 52rpx; }

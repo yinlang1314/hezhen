@@ -102,9 +102,8 @@
       </view>
     </view>
 
-    <view class="logout-wrap">
-      <view class="logout-btn" v-if="loggedIn" @click="handleLogout">退出登录</view>
-    <view class="login-btn" v-else @click="goLogin">登录 / 注册</view>
+    <view class="logout-wrap" v-if="loggedIn">
+      <view class="logout-btn" @click="handleLogout">退出登录</view>
     </view>
 
     <TabBar current="profile" />
@@ -259,10 +258,10 @@ export default {
   position: relative;
   margin: 24rpx 32rpx 0;
   border-radius: var(--r-xl);
-  background: linear-gradient(135deg, #059669 0%, #10B981 60%, #34D399 100%);
+  background: linear-gradient(135deg, #0f766e 0%, #0f766e 60%, #14b8a6 100%);
   padding: 44rpx 40rpx;
   overflow: hidden;
-  box-shadow: 0 16rpx 44rpx rgba(5, 150, 105, 0.28);
+  box-shadow: 0 16rpx 44rpx rgba(15, 118, 110, 0.28);
 }
 .hero-bg {
   position: absolute; right: -100rpx; top: -100rpx;
@@ -322,16 +321,16 @@ export default {
 .admin-bar {
   display: flex; align-items: center;
   margin: 28rpx 32rpx 0; padding: 28rpx 30rpx;
-  background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+  background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
   border-radius: var(--r-lg);
-  border: 2rpx solid #A7F3D0;
+  border: 2rpx solid #99f6e4;
 }
 .admin-bar:active { transform: scale(0.985); }
 .admin-emoji { width: 48rpx; height: 48rpx; margin-right: 20rpx; flex-shrink: 0; }
 .admin-texts { flex: 1; display: flex; flex-direction: column; }
 .admin-title { font-size: 29rpx; font-weight: 700; color: var(--c-primary-deep); }
-.admin-sub { font-size: 21rpx; color: #047857; margin-top: 6rpx; }
-.admin-arrow { font-size: 44rpx; color: #34D399; }
+.admin-sub { font-size: 21rpx; color: #0f766e; margin-top: 6rpx; }
+.admin-arrow { font-size: 44rpx; color: #14b8a6; }
 
 .trend-card {
   margin: 28rpx 32rpx 0; padding: 30rpx 32rpx;
@@ -345,7 +344,7 @@ export default {
 .trend-bar-wrap { height: 130rpx; display: flex; align-items: flex-end; }
 .trend-bar {
   width: 34rpx; border-radius: 10rpx;
-  background: linear-gradient(180deg, #6EE7B7, #10B981);
+  background: linear-gradient(180deg, #5eead4, #0f766e);
   min-height: 6rpx;
 }
 .trend-day { font-size: 19rpx; color: var(--t-faint); margin-top: 10rpx; }
@@ -364,11 +363,11 @@ export default {
 /* ============ 游客模式 ============ */
 .avatar-img { width: 100%; height: 100%; border-radius: 50%; }
 .hero-edit { font-size: 24rpx; color: rgba(255,255,255,0.9); margin-left: auto; padding-left: 16rpx; }
-.guest-bar { display: flex; align-items: center; justify-content: space-between; margin: 0 32rpx 32rpx; padding: 32rpx; border-radius: 24rpx; background: linear-gradient(135deg, #ECFDF5, #D1FAE5); border: 2rpx solid #A7F3D0; }
+.guest-bar { display: flex; align-items: center; justify-content: space-between; margin: 0 32rpx 32rpx; padding: 32rpx; border-radius: 24rpx; background: linear-gradient(135deg, #f0fdfa, #ccfbf1); border: 2rpx solid #99f6e4; }
 .guest-bar-texts { flex: 1; display: flex; flex-direction: column; }
-.guest-bar-title { font-size: 30rpx; font-weight: 700; color: #065F46; }
-.guest-bar-sub { font-size: 24rpx; color: #059669; margin-top: 6rpx; }
-.guest-bar-btn { padding: 14rpx 28rpx; border-radius: 99rpx; background: #10B981; color: #fff; font-size: 26rpx; font-weight: 700; }
-.login-btn { margin: 32rpx; height: 96rpx; border-radius: 24rpx; background: linear-gradient(135deg, #34D399, #059669); color: #fff; font-size: 32rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 12rpx 32rpx rgba(16,185,129,0.25); }
+.guest-bar-title { font-size: 30rpx; font-weight: 700; color: #115e59; }
+.guest-bar-sub { font-size: 24rpx; color: #0f766e; margin-top: 6rpx; }
+.guest-bar-btn { padding: 14rpx 28rpx; border-radius: 99rpx; background: #0f766e; color: #fff; font-size: 26rpx; font-weight: 700; }
+.login-btn { margin: 32rpx; height: 96rpx; border-radius: 24rpx; background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; font-size: 32rpx; font-weight: 700; display: flex; align-items: center; justify-content: center; box-shadow: 0 12rpx 32rpx rgba(15, 118, 110,0.25); }
 
 </style>

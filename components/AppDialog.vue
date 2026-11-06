@@ -73,7 +73,7 @@ export default {
   width: 128rpx;
   height: 128rpx;
   border-radius: 36rpx;
-  background: #ECFDF5;
+  background: #f0fdfa;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,12 +107,12 @@ export default {
 .dlg-btn.ghost { background: #F1F5F9; color: #475569; }
 .dlg-btn.ghost:active { background: #E2E8F0; }
 .dlg-btn.primary {
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   color: #FFFFFF;
-  box-shadow: 0 12rpx 28rpx rgba(5, 150, 105, 0.28);
+  box-shadow: 0 12rpx 28rpx rgba(15, 118, 110, 0.28);
 }
 .dlg-btn.primary.danger {
-  background: linear-gradient(135deg, #F87171, #DC2626);
+  background: linear-gradient(135deg, #F87171, #b91c1c);
   box-shadow: 0 12rpx 28rpx rgba(220, 38, 38, 0.26);
 }
 .dlg-btn.primary:active { transform: translateY(2rpx); }

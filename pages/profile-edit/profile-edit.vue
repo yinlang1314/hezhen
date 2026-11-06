@@ -188,12 +188,12 @@ export default {
 }
 .navbar-right {
   font-size: 32rpx;
-  color: #2ECC71;
+  color: #0f766e;
   font-weight: 500;
 }
 .save-btn {
   font-size: 30rpx;
-  color: #059669;
+  color: #0f766e;
   font-weight: 700;
   padding: 8rpx 4rpx;
 }

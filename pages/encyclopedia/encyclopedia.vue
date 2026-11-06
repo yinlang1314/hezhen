@@ -274,7 +274,7 @@ uni.$on('apiBaseUrlChanged', () => { this.$forceUpdate() })
   border: 2rpx solid #EDF2F7;
 }
 .category-item.active {
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   color: #fff;
   border-color: transparent;
   font-weight: 700;

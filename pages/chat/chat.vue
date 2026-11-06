@@ -205,10 +205,10 @@ export default {
 .welcome { padding: 60rpx 20rpx; display: flex; flex-direction: column; align-items: center; }
 .welcome-avatar {
   width: 132rpx; height: 132rpx; border-radius: 50%;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   display: flex; align-items: center; justify-content: center;
   font-size: 64rpx; margin-bottom: 28rpx;
-  box-shadow: 0 14rpx 36rpx rgba(16, 185, 129, .3);
+  box-shadow: 0 14rpx 36rpx rgba(15, 118, 110, .3);
 }
 .welcome-title { font-size: 36rpx; font-weight: 700; color: var(--t-strong); margin-bottom: 14rpx; }
 .welcome-desc { font-size: 26rpx; color: var(--t-sub); line-height: 1.75; text-align: center; padding: 0 20rpx; }
@@ -224,7 +224,7 @@ export default {
 .msg.user { flex-direction: row-reverse; }
 .msg-avatar {
   width: 64rpx; height: 64rpx; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   display: flex; align-items: center; justify-content: center; font-size: 32rpx;
 }
 .bubble {
@@ -234,7 +234,7 @@ export default {
   margin: 0 18rpx;
 }
 .bubble.assistant { background: #fff; box-shadow: var(--sh-card); border-top-left-radius: 6rpx; }
-.bubble.user { background: linear-gradient(135deg, #34D399, #059669); border-top-right-radius: 6rpx; }
+.bubble.user { background: linear-gradient(135deg, #14b8a6, #0f766e); border-top-right-radius: 6rpx; }
 .bubble-text { font-size: 28rpx; line-height: 1.75; }
 .bubble.assistant .bubble-text { color: var(--t-main); }
 .bubble.user .bubble-text { color: #fff; }
@@ -260,7 +260,7 @@ export default {
 }
 .send-btn {
   padding: 0 36rpx; height: 84rpx; border-radius: 999rpx;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   display: flex; align-items: center; justify-content: center;
 }
 .send-btn.disabled { opacity: .45; }

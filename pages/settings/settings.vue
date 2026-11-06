@@ -67,7 +67,7 @@
 
       <view class="setting-item">
         <text class="setting-label">自动保存识别记录</text>
-        <switch :checked="autoSave" @change="toggleAutoSave" color="#2ECC71"></switch>
+        <switch :checked="autoSave" @change="toggleAutoSave" color="#0f766e"></switch>
       </view>
 
       <view class="setting-item" @click="goToProfileEdit">
@@ -337,7 +337,7 @@ export default {
 .pwd-actions { display: flex; justify-content: flex-end; gap: 16rpx; margin-top: 8rpx; }
 .pwd-btn { padding: 16rpx 38rpx; border-radius: 16rpx; font-size: 26rpx; font-weight: 600; }
 .pwd-btn.cancel { background: #F1F5F9; color: #64748B; }
-.pwd-btn.ok { background: linear-gradient(135deg, #34D399, #059669); color: #fff; }
+.pwd-btn.ok { background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; }
 .pwd-tip { display: block; margin-top: 16rpx; font-size: 21rpx; color: #94A3B8; line-height: 1.6; }
  scoped>
 .container {
@@ -368,7 +368,7 @@ export default {
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #333333;
+  color: #334155;
 }
 
 .setting-list {
@@ -392,7 +392,7 @@ export default {
 
 .setting-label {
   font-size: 32rpx;
-  color: #333333;
+  color: #334155;
 }
 
 .setting-value {

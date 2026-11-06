@@ -475,7 +475,7 @@ export default {
   position: absolute; left: 50%; top: 10%; transform: translateX(-50%);
   width: min(88vw, 960px); height: 56vh; z-index: 3; pointer-events: none;
 }
-.corner { position: absolute; width: 56rpx; height: 56rpx; border: 4rpx solid rgba(52, 211, 153, .9); }
+.corner { position: absolute; width: 56rpx; height: 56rpx; border: 4rpx solid rgba(20, 184, 166, .9); }
 .corner.tl { left: 0; top: 0; border-right: none; border-bottom: none; border-top-left-radius: 12rpx; }
 .corner.tr { right: 0; top: 0; border-left: none; border-bottom: none; border-top-right-radius: 12rpx; }
 .corner.bl { left: 0; bottom: 0; border-right: none; border-top: none; border-bottom-left-radius: 12rpx; }
@@ -484,8 +484,8 @@ export default {
 /* 扫描线 */
 .scan-line {
   position: absolute; left: 0; right: 0; height: 4rpx;
-  background: linear-gradient(90deg, transparent, rgba(52, 211, 153, .95), transparent);
-  box-shadow: 0 0 24rpx rgba(52, 211, 153, .8);
+  background: linear-gradient(90deg, transparent, rgba(20, 184, 166, .95), transparent);
+  box-shadow: 0 0 24rpx rgba(20, 184, 166, .8);
   animation: scan 2.4s linear infinite;
 }
 @keyframes scan {
@@ -506,7 +506,7 @@ export default {
   border: 1rpx solid rgba(148, 163, 184, .35); backdrop-filter: blur(8rpx);
 }
 .chip .dot { width: 12rpx; height: 12rpx; border-radius: 50%; background: #64748B; }
-.chip.ok .dot { background: #34D399; box-shadow: 0 0 12rpx #34D399; }
+.chip.ok .dot { background: #14b8a6; box-shadow: 0 0 12rpx #14b8a6; }
 .chip.scanning .dot { background: #FBBF24; }
 .chip.err .dot { background: #F87171; }
 .hud-time { font-size: 22rpx; color: rgba(226, 232, 240, .75); }
@@ -517,7 +517,7 @@ export default {
   width: min(94vw, 900px); z-index: 4;
 }
 .result-card {
-  background: rgba(15, 23, 42, .82); border: 1rpx solid rgba(52, 211, 153, .35);
+  background: rgba(15, 23, 42, .82); border: 1rpx solid rgba(20, 184, 166, .35);
   border-radius: 24rpx; padding: 26rpx 28rpx; backdrop-filter: blur(10rpx);
   box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, .45);
 }
@@ -544,16 +544,16 @@ export default {
   margin-top: -4rpx;
 }
 .rc-name { font-size: 40rpx; font-weight: 800; color: #F8FAFC; }
-.rc-score { display: flex; align-items: baseline; padding: 6rpx 18rpx; border-radius: 999rpx; background: rgba(16, 185, 129, .18); }
+.rc-score { display: flex; align-items: baseline; padding: 6rpx 18rpx; border-radius: 999rpx; background: rgba(15, 118, 110, .18); }
 .rc-score.low { background: rgba(245, 158, 11, .18); }
-.rc-num { font-size: 34rpx; font-weight: 800; color: #34D399; }
+.rc-num { font-size: 34rpx; font-weight: 800; color: #14b8a6; }
 .rc-score.low .rc-num { color: #FBBF24; }
-.rc-pct { font-size: 20rpx; color: #34D399; margin-left: 2rpx; }
+.rc-pct { font-size: 20rpx; color: #14b8a6; margin-left: 2rpx; }
 .rc-score.low .rc-pct { color: #FBBF24; }
 .rc-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-top: 14rpx; }
 .rc-tag { font-size: 22rpx; color: #CBD5E1; background: rgba(148, 163, 184, .18); padding: 4rpx 14rpx; border-radius: 8rpx; }
 .rc-tag.lv { color: #FDE68A; background: rgba(245, 158, 11, .18); }
-.rc-tag.ghost { color: #6EE7B7; background: rgba(16, 185, 129, .14); }
+.rc-tag.ghost { color: #5eead4; background: rgba(15, 118, 110, .14); }
 .rc-advice { display: block; margin-top: 16rpx; font-size: 24rpx; color: #94A3B8; line-height: 1.6; }
 
 /* 明细：症状 / 用药 / 防治 */
@@ -565,8 +565,8 @@ export default {
 .rc-row { display: flex; align-items: flex-start; margin-bottom: 14rpx; }
 .rc-row:last-child { margin-bottom: 0; }
 .rc-k {
-  flex-shrink: 0; width: 68rpx; font-size: 22rpx; color: #6EE7B7;
-  background: rgba(16, 185, 129, 0.14); border-radius: 8rpx;
+  flex-shrink: 0; width: 68rpx; font-size: 22rpx; color: #5eead4;
+  background: rgba(15, 118, 110, 0.14); border-radius: 8rpx;
   text-align: center; padding: 4rpx 0; margin-right: 16rpx;
 }
 .rc-v { flex: 1; font-size: 23rpx; color: #CBD5E1; line-height: 1.65; }
@@ -582,8 +582,8 @@ export default {
   border-top: 1rpx solid rgba(148, 163, 184, 0.18);
 }
 .rc-more:active { opacity: .7; }
-.rc-more-text { font-size: 24rpx; color: #34D399; font-weight: 600; }
-.rc-more-arrow { font-size: 28rpx; color: #34D399; }
+.rc-more-text { font-size: 24rpx; color: #14b8a6; font-weight: 600; }
+.rc-more-arrow { font-size: 28rpx; color: #14b8a6; }
 
 /* 历史 */
 .history { margin-top: 16rpx; padding: 18rpx 22rpx; border-radius: 18rpx; background: rgba(15, 23, 42, .6); }
@@ -591,7 +591,7 @@ export default {
 .his-row { display: flex; align-items: center; gap: 16rpx; margin-top: 8rpx; }
 .his-time { font-size: 21rpx; color: #64748B; width: 120rpx; }
 .his-name { flex: 1; font-size: 24rpx; color: #E2E8F0; }
-.his-conf { font-size: 22rpx; color: #34D399; }
+.his-conf { font-size: 22rpx; color: #14b8a6; }
 
 /* 按钮 */
 .rt-actions { display: flex; gap: 16rpx; margin-top: 20rpx; }
@@ -600,7 +600,7 @@ export default {
   font-size: 26rpx; font-weight: 700; color: #E2E8F0; background: rgba(148, 163, 184, .18);
   border: 1rpx solid rgba(148, 163, 184, .28);
 }
-.rt-btn.primary { background: linear-gradient(135deg, #34D399, #059669); color: #fff; border: none; }
+.rt-btn.primary { background: linear-gradient(135deg, #14b8a6, #0f766e); color: #fff; border: none; }
 .rt-btn.off { opacity: .45; }
 .rt-hint { display: block; margin-top: 14rpx; text-align: center; font-size: 21rpx; color: #64748B; }
 .rt-ver { display: block; margin-top: 6rpx; text-align: center; font-size: 19rpx; color: #334155; }

@@ -57,7 +57,10 @@ export default {
 </script>
 
 <style scoped>
-.app-nav { background: transparent; }
+.app-nav {
+  background: #fff;
+  border-bottom: 1rpx solid var(--line);
+}
 .app-nav-white { background: #fff; }
 
 .app-nav-inner {

@@ -145,7 +145,7 @@ export default {
 	margin-top: 8rpx;
 }
 .submit-btn {
-	background: #2ECC71;
+	background: #0f766e;
 	color: #fff;
 	border-radius: 20rpx;
 	height: 88rpx;

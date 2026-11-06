@@ -282,7 +282,7 @@ export default {
   padding: 24rpx 32rpx 8rpx;
 }
 .top-left { display: flex; align-items: center; }
-.brand-dot { width: 76rpx; height: 76rpx; border-radius: 24rpx; display: block; box-shadow: 0 8rpx 20rpx rgba(16, 185, 129, 0.28); }
+.brand-dot { width: 76rpx; height: 76rpx; border-radius: 24rpx; display: block; box-shadow: 0 8rpx 20rpx rgba(15, 118, 110, 0.28); }
 .brand-text { margin-left: 18rpx; display: flex; flex-direction: column; }
 .brand-name { font-size: 32rpx; font-weight: 700; color: var(--t-strong); }
 .brand-date { font-size: 22rpx; color: var(--t-faint); margin-top: 2rpx; }
@@ -304,10 +304,10 @@ export default {
   position: relative;
   margin: 32rpx 32rpx 0;
   border-radius: var(--r-xl);
-  background: linear-gradient(135deg, #059669 0%, #10B981 55%, #34D399 100%);
+  background: linear-gradient(135deg, #0f766e 0%, #0f766e 55%, #14b8a6 100%);
   padding: 44rpx 40rpx;
   overflow: hidden;
-  box-shadow: 0 16rpx 44rpx rgba(5, 150, 105, 0.3);
+  box-shadow: 0 16rpx 44rpx rgba(15, 118, 110, 0.3);
 }
 .hero-card:active { transform: scale(0.985); }
 .hero-glow {
@@ -391,7 +391,7 @@ export default {
   margin: 8rpx 32rpx 32rpx;
   padding: 40rpx 36rpx 32rpx;
   border-radius: 32rpx;
-  background: linear-gradient(160deg, #1F6E4C 0%, #2E9E6B 55%, #48B87F 100%);
+  background: linear-gradient(160deg, #134E4A 0%, #0F766E 60%, #115E59 100%);
   box-shadow: 0 20rpx 48rpx rgba(16, 94, 63, .28);
   overflow: hidden;
   color: #fff;
@@ -421,7 +421,7 @@ export default {
   background: rgba(255,255,255,.95);
 }
 .risk-pill-text { font-size: 24rpx; font-weight: 700; }
-.rp-high .risk-pill-text { color: #DC2626; }
+.rp-high .risk-pill-text { color: #b91c1c; }
 .rp-medium .risk-pill-text { color: #D97706; }
 .rp-low .risk-pill-text { color: #CA8A04; }
 .rp-none { background: rgba(255,255,255,.25); }
@@ -481,7 +481,7 @@ export default {
   box-shadow: 0 10rpx 26rpx rgba(0,0,0,.14);
 }
 .hero-btn-icon { width: 32rpx; height: 32rpx; margin-right: 10rpx; flex-shrink: 0; }
-.hero-btn-text { font-size: 30rpx; font-weight: 700; color: #1F6E4C; }
+.hero-btn-text { font-size: 30rpx; font-weight: 700; color: #0F766E; }
 .hero-btn-ghost {
   padding: 0 32rpx;
   height: 92rpx;

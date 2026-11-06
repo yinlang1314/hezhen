@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head>
+<%- include('partials/head', { pageTitle: '审核台' }) %>
+</head><body>
+<%- include('partials/nav', { current: 'review', adminName: adminName }) %>
+<div class="wrap">
+  <h1 class="page-title">审核台</h1>
+  <div class="page-sub">一次看一条完整内容，判断能不能上线。<b>通过</b> = App 立即可见；<b>标记待改</b> = 记下问题、留在待核实；<b>跳过</b> = 先不看</div>
+
+  <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
+  <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
+
+  <div style="display:flex;gap:10px;margin:14px 0 16px;flex-wrap:wrap;font-size:13px">
+    <a class="btn btn-sm <%= state === 'pending' ? '' : 'btn-ghost' %>" href="/admin/review?state=pending">待审核 <%= counts.pending %></a>
+    <a class="btn btn-sm <%= state === 'revise' ? '' : 'btn-ghost' %>" href="/admin/review?state=revise">标记待改 <%= counts.revise %></a>
+    <a class="btn btn-sm btn-ghost" href="/admin/diseases?status=verified">已上线 <%= counts.verified %></a>
+  </div>
+
+  <% if (!row) { %>
+    <div class="card" style="padding:40px;text-align:center;color:#64748b">
+      这一类已经处理完了 🎉<br>
+      <div style="margin-top:14px"><a class="btn btn-sm" href="/admin/diseases">去病虫害库看看</a></div>
+    </div>
+  <% } else { %>
+    <div class="card" style="padding:22px 24px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:20px;font-weight:700"><%= row.name %> <span style="font-size:12px;color:#94a3b8">id <%= row.id %></span></div>
+          <div style="margin-top:6px;font-size:12.5px;color:<%= row.verify_source ? '#0f766e' : '#c2410c' %>">
+            <%= row.verify_source ? ('来源：' + row.verify_source + (row.verify_date ? ' · ' + row.verify_date : '')) : '⚠ 没有数据来源，不能上线' %>
+          </div>
+          <% if (row.review_note) { %><div style="margin-top:6px;font-size:12.5px;color:#b45309">上次备注：<%= row.review_note %></div><% } %>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12.5px">
+          <span class="tag <%= row.level === 3 ? 'tag-red' : row.level === 1 ? 'tag-green' : 'tag-amber' %>"><%= row.level_text || '-' %></span>
+          <span class="tag tag-green"><%= row.category || '-' %></span>
+          <span class="tag tag-amber"><%= row.type || '-' %></span>
+          <a class="btn btn-ghost btn-sm" href="/admin/diseases/edit/<%= row.id %>" target="_blank">去编辑</a>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;display:grid;gap:14px">
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">发病症状</div>
+          <div style="font-size:13px;line-height:1.75;color:#334155"><%= row.symptom || '（空）' %></div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">病因</div>
+          <div style="font-size:13px;line-height:1.75;color:#334155"><%= row.cause || '（空）' %></div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">传播途径</div>
+          <div style="font-size:13px;line-height:1.75;color:#334155"><%= row.spread || '（空）' %></div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">发生条件</div>
+          <div style="font-size:13px;line-height:1.75;color:#334155"><%= row.occurrence || '（空）' %></div>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">推荐用药</div>
+          <% var meds = []; try { meds = JSON.parse(row.medicines || '[]') } catch (e) { meds = [] } %>
+          <% if (!meds.length) { %>
+            <div style="font-size:13px;color:#b45309">（没有用药方案 —— 上线后详情页这里是空的）</div>
+          <% } else { %>
+            <ol style="margin:0;padding-left:20px;font-size:13px;line-height:1.8;color:#334155">
+              <% meds.slice(0, 6).forEach(function (m) { %>
+                <li><b><%= m.name %></b><%= m.tox ? ' · ' + m.tox : '' %> — <%= m.usage || '' %></li>
+              <% }) %>
+            </ol>
+          <% } %>
+        </div>
+        <div>
+          <div style="font-weight:600;font-size:13px;color:#0f172a;margin-bottom:4px">防治建议</div>
+          <% var sug = []; try { sug = JSON.parse(row.suggestions || '[]') } catch (e) {} %>
+          <div style="font-size:13px;line-height:1.8;color:#334155">
+            <% if (!sug.length) { %>（空）<% } else { %><ol style="margin:0;padding-left:20px"><% sug.slice(0, 6).forEach(function (s) { %><li><%= s %></li><% }) %></ol><% } %>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:22px;padding-top:18px;border-top:1px solid #e2e8f0">
+        <form method="post" action="/admin/review/<%= row.id %>/decision" id="decForm">
+          <input type="hidden" name="state" value="<%= state %>">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" type="submit" name="action" value="approve"
+                    <%= row.verify_source ? '' : 'disabled title="没有来源不能上线"' %>>通过，上线</button>
+            <button class="btn btn-ghost" type="button" onclick="markRevise()">标记待改</button>
+            <button class="btn btn-ghost" type="submit" name="action" value="skip">跳过这条</button>
+            <input name="note" placeholder="备注（标记待改时填写，例如：用药为空 / 症状描述不准）"
+                   style="flex:1;min-width:240px;padding:8px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px">
+            <span style="font-size:12px;color:#94a3b8">通过后 App 立即可见</span>
+          </div>
+        </form>
+      </div>
+    </div>
+  <% } %>
+</div>
+<script>
+  function markRevise() {
+    var f = document.getElementById('decForm')
+    var note = f.querySelector('input[name="note"]').value.trim()
+    var btn = document.createElement('input')
+    btn.type = 'hidden'; btn.name = 'action'; btn.value = 'revise'
+    f.appendChild(btn)
+    f.submit()
+  }
+</script>
+</body></html>

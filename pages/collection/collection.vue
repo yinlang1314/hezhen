@@ -225,14 +225,14 @@ export default {
 .navbar-title {
   font-size: 36rpx;
   font-weight: 600;
-  color: #333333;
+  color: #334155;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .clear-btn {
-  color: #e74c3c;
+  color: #b91c1c;
   font-size: 28rpx;
   cursor: pointer;
 }
@@ -351,18 +351,18 @@ export default {
   height: 92rpx;
   line-height: 92rpx;
   padding: 0 64rpx;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   color: #FFFFFF;
   border: none;
   border-radius: 46rpx;
   font-size: 28rpx;
   font-weight: 600;
   letter-spacing: 1rpx;
-  box-shadow: 0 12rpx 32rpx rgba(5, 150, 105, 0.25);
+  box-shadow: 0 12rpx 32rpx rgba(15, 118, 110, 0.25);
   cursor: pointer;
   transition: all 0.2s ease;
 }
-.go-btn:active { transform: translateY(2rpx); box-shadow: 0 6rpx 16rpx rgba(5, 150, 105, 0.22); }
+.go-btn:active { transform: translateY(2rpx); box-shadow: 0 6rpx 16rpx rgba(15, 118, 110, 0.22); }
 
 .go-btn:hover {
   background-color: #27AE60;
@@ -428,7 +428,7 @@ export default {
   font-weight: 600 !important;
 }
 .confidence-tag { background: var(--c-primary-soft) !important; color: var(--c-primary-deep) !important; }
-.level-1 { background: #DCFCE7 !important; color: #15803D !important; }
+.level-1 { background: #DCFCE7 !important; color: #0f766e !important; }
 .level-2 { background: #FEF3C7 !important; color: #B45309 !important; }
 .level-3 { background: #FEE2E2 !important; color: #B91C1C !important; }
 .type-tag { background: #F1F5F9 !important; color: var(--t-sub) !important; }
@@ -457,7 +457,7 @@ export default {
   height: 88rpx !important;
   padding: 0 64rpx !important;
   border-radius: 999rpx !important;
-  background: linear-gradient(135deg, #34D399, #059669) !important;
+  background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
   color: #fff !important;
   font-size: 28rpx !important;
   font-weight: 600 !important;

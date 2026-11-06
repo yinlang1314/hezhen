@@ -1,64 +1,76 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN"><head>
 <%- include('partials/head', { pageTitle: '用户纠错' }) %>
 </head><body>
 <%- include('partials/nav', { current: 'corrections', adminName: adminName }) %>
 <div class="wrap">
-  <h1 class="page-title">用户纠错 · 复核</h1>
-  <div class="page-sub">用户在 App 里指出 AI 判断错误时记录在此。<b>通过</b> = 把对应病害标为"已核实"（App 里会显示来源）；<b>驳回</b> = 保留记录但不采信</div>
+
+  <div class="page-head">
+    <div>
+      <h1>用户纠错</h1>
+      <div class="sub">通过 = 把对应病害标为「已核实」并在 App 显示来源 · 驳回 = 保留记录但不采信</div>
+    </div>
+    <div class="actions">
+      <div class="seg">
+        <a class="seg-item <%= status === 'pending' ? 'on' : '' %>" href="/admin/corrections?status=pending">待复核 <b><%= counts.pending %></b></a>
+        <a class="seg-item <%= status === 'approved' ? 'on' : '' %>" href="/admin/corrections?status=approved">已通过 <b><%= counts.approved %></b></a>
+        <a class="seg-item <%= status === 'rejected' ? 'on' : '' %>" href="/admin/corrections?status=rejected">已驳回 <b><%= counts.rejected %></b></a>
+        <a class="seg-item <%= status === 'all' ? 'on' : '' %>" href="/admin/corrections?status=all">全部 <b><%= counts.all %></b></a>
+      </div>
+    </div>
+  </div>
 
   <% if (flash.success) { %><div class="alert alert-ok">✅ <%= flash.success %></div><% } %>
   <% if (flash.error) { %><div class="alert alert-error">⚠️ <%= flash.error %></div><% } %>
 
-  <div class="tabs" style="display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap">
-    <a class="btn btn-sm <%= status === 'pending' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=pending">待复核 <%= counts.pending %></a>
-    <a class="btn btn-sm <%= status === 'approved' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=approved">已通过 <%= counts.approved %></a>
-    <a class="btn btn-sm <%= status === 'rejected' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=rejected">已驳回 <%= counts.rejected %></a>
-    <a class="btn btn-sm <%= status === 'all' ? '' : 'btn-ghost' %>" href="/admin/corrections?status=all">全部 <%= counts.all %></a>
-  </div>
-
   <div class="card">
+    <div class="card-head"><span>纠错记录<span class="count">共 <%= rows.length %> 条</span></span></div>
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>记录号</th><th>用户</th><th>AI 原判断</th><th>用户纠正为</th><th>寄主</th><th>时间</th><th>状态</th><th style="text-align:right">操作</th>
+            <th style="width:90px">记录号</th>
+            <th style="width:110px">用户</th>
+            <th style="min-width:190px">AI 原判断</th>
+            <th style="min-width:190px">用户纠正为</th>
+            <th style="width:130px">寄主</th>
+            <th style="width:150px">时间</th>
+            <th style="width:180px">状态</th>
+            <th style="width:150px;text-align:right">操作</th>
           </tr>
         </thead>
         <tbody>
           <% if (!rows.length) { %>
-            <tr><td colspan="8" class="empty-row">这个状态下暂无记录</td></tr>
+            <tr><td colspan="8" class="empty-row" style="text-align:center;color:#94a3b8;padding:40px 0">这个状态下暂无记录</td></tr>
           <% } else { rows.forEach(function (r) { %>
             <% var st = r.status || 'pending' %>
             <tr>
-              <td><%= r.history_id || '-' %></td>
+              <td class="muted">#<%= r.history_id || '-' %></td>
               <td><%= r.username || '未登录' %></td>
-              <td style="color:#b45309"><%= r.ai_name || '-' %></td>
-              <td style="color:#047857;font-weight:700"><%= r.correct_name %></td>
-              <td><%= r.plant_name || '-' %></td>
-              <td class="nowrap" style="color:#94a3b8;font-size:12.5px"><%= r.create_time %></td>
-              <td class="nowrap">
-                <% if (st === 'approved') { %>
-                  <span style="color:#047857;font-weight:600">✅ 已通过</span>
-                <% } else if (st === 'rejected') { %>
-                  <span style="color:#b91c1c;font-weight:600">✕ 已驳回</span>
-                <% } else { %>
-                  <span style="color:#b45309;font-weight:600">⏳ 待复核</span>
+              <td><span class="ellipsis" style="max-width:220px;color:#b45309" title="<%= r.ai_name || '' %>"><%= r.ai_name || '-' %></span></td>
+              <td><span class="ellipsis" style="max-width:220px;font-weight:600;color:#047857" title="<%= r.correct_name %>"><%= r.correct_name %></span></td>
+              <td><span class="ellipsis" style="max-width:130px" title="<%= r.plant_name || '' %>"><%= r.plant_name || '-' %></span></td>
+              <td class="nowrap muted"><%= r.create_time %></td>
+              <td>
+                <% if (st === 'approved') { %><span class="tag tag-green">已通过</span>
+                <% } else if (st === 'rejected') { %><span class="tag tag-red">已驳回</span>
+                <% } else { %><span class="tag tag-orange">待复核</span><% } %>
+                <% if (r.reviewer) { %>
+                  <div class="muted" style="margin-top:3px"><%= r.reviewer %> · <%= String(r.reviewed_at || '').slice(0, 16).replace('T', ' ') %></div>
                 <% } %>
-                <% if (r.reviewer) { %><div style="color:#94a3b8;font-size:12px"><%= r.reviewer %> · <%= (r.reviewed_at || '').slice(0, 16).replace('T', ' ') %></div><% } %>
-                <% if (r.note) { %><div style="color:#64748b;font-size:12px">备注：<%= r.note %></div><% } %>
+                <% if (r.note) { %><div class="muted" style="margin-top:2px">备注：<%= r.note %></div><% } %>
               </td>
-              <td style="text-align:right">
+              <td class="nowrap" style="text-align:right">
                 <% if (st === 'pending') { %>
                   <form method="post" action="/admin/corrections/<%= r.id %>/review" style="display:inline">
                     <input type="hidden" name="action" value="approve">
-                    <button class="btn btn-sm" type="submit" onclick="return confirm('通过后会把「<%= r.correct_name %>」标为已核实，确定吗？')">通过</button>
+                    <button class="btn btn-primary btn-sm" type="submit" onclick="return confirm('通过后会把「<%= r.correct_name %>」标为已核实，确定吗？')">通过</button>
                   </form>
-                  <form method="post" action="/admin/corrections/<%= r.id %>/review" style="display:inline-flex;gap:4px;align-items:center">
+                  <button class="btn btn-ghost btn-sm" type="button" onclick="toggleReject(<%= r.id %>)">驳回</button>
+                  <form method="post" action="/admin/corrections/<%= r.id %>/review" id="rej<%= r.id %>" style="display:none;margin-top:6px">
                     <input type="hidden" name="action" value="reject">
-                    <input name="note" placeholder="驳回原因（可选）" style="width:110px;padding:4px 6px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px">
-                    <button class="btn btn-danger btn-sm" type="submit">驳回</button>
+                    <input name="note" placeholder="驳回原因（可选）" class="note-mini">
+                    <button class="btn btn-danger btn-sm" type="submit" style="margin-left:4px">确定</button>
                   </form>
                 <% } else { %>
                   <form method="post" action="/admin/corrections/<%= r.id %>/delete" style="display:inline"
@@ -74,4 +86,21 @@
     </div>
   </div>
 </div>
+<script>
+  function toggleReject(id) {
+    var f = document.getElementById('rej' + id)
+    if (!f) return
+    f.style.display = f.style.display === 'none' ? 'block' : 'none'
+    var i = f.querySelector('input[name="note"]')
+    if (i) i.focus()
+  }
+</script>
+<style>
+  .seg { display:inline-flex; background:#eef2f7; border-radius:8px; padding:3px; gap:2px; }
+  .seg-item { padding:6px 12px; border-radius:6px; font-size:12.5px; color:#475569; text-decoration:none; }
+  .seg-item b { margin-left:4px; font-weight:600; }
+  .seg-item:hover { text-decoration:none; background:#e2e8f0; }
+  .seg-item.on { background:#fff; color:#0f766e; box-shadow:0 1px 3px rgba(0,0,0,.1); }
+  .note-mini { width:100px; padding:3px 6px; border:1px solid #e2e8f0; border-radius:5px; font-size:12px; }
+</style>
 </body></html>

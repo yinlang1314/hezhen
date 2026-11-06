@@ -102,8 +102,8 @@ export default {
 }
 
 .tab-icon-wrap.on {
-  background: linear-gradient(135deg, #D1FAE5, #A7F3D0);
-  box-shadow: 0 4rpx 14rpx rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, #ccfbf1, #99f6e4);
+  box-shadow: 0 4rpx 14rpx rgba(15, 118, 110, 0.25);
 }
 
 .tab-img {
@@ -124,7 +124,7 @@ export default {
 }
 
 .tab-item.active .tab-text {
-  color: var(--c-primary-deep, #065F46);
+  color: var(--c-primary-deep, #115e59);
   font-weight: 700;
 }
 /* 宽屏：底部导航和内容同宽同位置 */

@@ -4,7 +4,7 @@
    ================================================================== */
 .auth-page {
   min-height: 100%;
-  background: linear-gradient(170deg, #ECFDF5 0%, #F0FDF4 35%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #F0FDFA 0%, #F5F7FA 42%, #FFFFFF 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,15 +17,15 @@
 .bg-blob { position: absolute; border-radius: 50%; }
 .b1 {
   width: 460rpx; height: 460rpx; top: -180rpx; right: -160rpx;
-  background: radial-gradient(circle, rgba(16,185,129,0.22), transparent 70%);
+  background: radial-gradient(circle, rgba(15, 118, 110,0.22), transparent 70%);
 }
 .b2 {
   width: 320rpx; height: 320rpx; top: 260rpx; left: -140rpx;
-  background: radial-gradient(circle, rgba(52,211,153,0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(20, 184, 166,0.16), transparent 70%);
 }
 .b3 {
   width: 400rpx; height: 400rpx; bottom: -160rpx; right: -120rpx;
-  background: radial-gradient(circle, rgba(5,150,105,0.12), transparent 70%);
+  background: radial-gradient(circle, rgba(15, 118, 110,0.12), transparent 70%);
 }
 
 /* 品牌区 */
@@ -36,21 +36,21 @@
 }
 .brand-logo {
   width: 150rpx; height: 150rpx; border-radius: 46rpx;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 18rpx 44rpx rgba(5, 150, 105, 0.32);
+  box-shadow: 0 18rpx 44rpx rgba(15, 118, 110, 0.32);
 }
 .brand-img { width: 100%; height: 100%; display: block; border-radius: 46rpx; }
 .brand-title {
   font-size: 54rpx; font-weight: 800; color: #064E3B;
   letter-spacing: 6rpx; margin-top: 32rpx;
 }
-.brand-sub { font-size: 25rpx; color: #10B981; letter-spacing: 2rpx; margin-top: 12rpx; }
+.brand-sub { font-size: 25rpx; color: #0f766e; letter-spacing: 2rpx; margin-top: 12rpx; }
 .brand-feats { display: flex; align-items: center; margin-top: 34rpx; }
 .feat { display: flex; align-items: center; }
 .feat-img { width: 28rpx; height: 28rpx; margin-right: 8rpx; flex-shrink: 0; }
 .feat-text { font-size: 23rpx; color: #64748B; }
-.feat-dot { width: 8rpx; height: 8rpx; border-radius: 50%; background: #A7F3D0; margin: 0 22rpx; }
+.feat-dot { width: 8rpx; height: 8rpx; border-radius: 50%; background: #99f6e4; margin: 0 22rpx; }
 
 /* 卡片 */
 .auth-card {
@@ -74,7 +74,7 @@
   border-radius: 26rpx;
   padding: 0 28rpx;
 }
-.field:focus-within { border-color: #6EE7B7; background: #fff; }
+.field:focus-within { border-color: #5eead4; background: #fff; }
 .field-icon { width: 34rpx; height: 34rpx; margin-right: 18rpx; flex-shrink: 0; }
 .field-input { flex: 1; height: 104rpx; font-size: 29rpx; color: #1E293B; }
 .ph { color: #B6C2CF; }
@@ -84,9 +84,9 @@
 .auth-btn {
   height: 104rpx; margin-top: 44rpx;
   border-radius: 26rpx;
-  background: linear-gradient(135deg, #34D399, #059669);
+  background: linear-gradient(135deg, #14b8a6, #0f766e);
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 14rpx 34rpx rgba(5, 150, 105, 0.3);
+  box-shadow: 0 14rpx 34rpx rgba(15, 118, 110, 0.3);
 }
 .auth-btn:active { transform: translateY(2rpx); opacity: 0.94; }
 .auth-btn.disabled { opacity: 0.6; }
@@ -103,7 +103,7 @@
 /* 底部链接 */
 .card-foot { display: flex; align-items: center; justify-content: center; margin-top: 34rpx; }
 .foot-text { font-size: 25rpx; color: #94A3B8; }
-.foot-link { font-size: 25rpx; color: #059669; font-weight: 700; margin-left: 8rpx; }
+.foot-link { font-size: 25rpx; color: #0f766e; font-weight: 700; margin-left: 8rpx; }
 
 /* 密码强度 */
 .strength { display: flex; align-items: center; gap: 10rpx; margin-top: 20rpx; }
@@ -113,7 +113,7 @@
 }
 .strength-bar.on-1 { background: #F87171; }
 .strength-bar.on-2 { background: #FBBF24; }
-.strength-bar.on-3 { background: #34D399; }
+.strength-bar.on-3 { background: #14b8a6; }
 .strength-text { font-size: 21rpx; color: #94A3B8; min-width: 100rpx; text-align: right; }
 
 /* 协议 */
@@ -124,12 +124,25 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 22rpx; color: #fff;
 }
-.agree-box.checked { background: #10B981; border-color: #10B981; }
+.agree-box.checked { background: #0f766e; border-color: #0f766e; }
 .agree-text { flex: 1; font-size: 22rpx; color: #94A3B8; line-height: 1.6; }
-.agree-link { color: #059669; font-weight: 600; }
+.agree-link { color: #0f766e; font-weight: 600; }
 
 .copyright {
   position: relative; z-index: 2;
   margin-top: auto; margin-bottom: 50rpx;
   font-size: 21rpx; color: #B6C2CF; letter-spacing: 1rpx;
 }
+
+
+/* 登录页底部协议说明：单独一行、居中，不跟按钮贴在一起 */
+.agree-note {
+  display: block;
+  width: 100%;
+  margin-top: 24rpx;
+  text-align: center;
+  font-size: 22rpx;
+  line-height: 1.7;
+  color: #94A3B8;
+}
+.agree-note .agree-link { color: #0F766E; }
