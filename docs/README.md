@@ -55,7 +55,7 @@
 | [README](../README.md) | 项目介绍、快速开始、常见问题 |
 | [agriculture-backend/](../agriculture-backend/) | 后端源码（Express + 双驱动数据库）|
 | [pages/](../pages/) | 前端页面（uni-app / Vue 3）|
-| [dist/apk/](../dist/apk/) | Android 安装包 v1.0.1（15 MB）|
+| [dist/apk/](../dist/apk/) | Android 安装包 v1.1.0（15 MB）|
 | [dist/mp-weixin/](../dist/mp-weixin/) | 微信小程序编译产物（可直接导入开发者工具）|
 
 ---

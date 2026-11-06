@@ -345,9 +345,9 @@ cli launch mp-weixin --project <项目路径> --compile true
 
 ### Android APK（仓库内已带安装包）
 
-安装包在仓库内：`dist/apk/hezhen-v1.0.1.apk`（15 MB）
+安装包在仓库内：`dist/apk/hezhen-v1.1.0.apk`（15 MB）
 
-👉 https://github.com/yinlang1314/hezhen/blob/main/dist/apk/hezhen-v1.0.1.apk
+👉 https://github.com/yinlang1314/hezhen/blob/main/dist/apk/hezhen-v1.1.0.apk
 
 装机后如果连不上后端：打开「我的 → 设置 → 服务器连接 → 后端地址」，填 `http://电脑IP:3000`，保存并测试。
 
