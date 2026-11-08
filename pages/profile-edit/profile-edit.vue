@@ -11,7 +11,7 @@
       <view class="profile-item" @click="chooseAvatar">
         <text class="label">头像</text>
         <view class="avatar-box">
-          <image class="avatar" :src="avatarUrl" mode="aspectFill"></image>
+          <UserAvatar :src="avatarUrl" :name="nickname || username || ''" :size="120" />
           <text class="hint">点击更换</text>
         </view>
       </view>
@@ -41,12 +41,13 @@
 
 <script>
 import { api } from '@/utils/api.js'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { safeBack } from '@/utils/nav.js'
 import { imageUrl } from '@/utils/config.js'
 import NavBar from '@/components/NavBar.vue'
 
 export default {
-  components: { NavBar },
+  components: { UserAvatar, NavBar },
   data() {
     return {
       avatarUrl: '/static/default-avatar.png',

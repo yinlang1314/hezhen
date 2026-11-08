@@ -2,6 +2,7 @@
   "navigationStyle": "custom",
   "backgroundColor": "#F8FAFC",
   "usingComponents": {
+    "user-avatar": "../../components/UserAvatar",
     "nav-bar": "../../components/NavBar"
   }
 }

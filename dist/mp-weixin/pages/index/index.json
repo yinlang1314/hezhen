@@ -2,6 +2,7 @@
   "navigationStyle": "custom",
   "backgroundColor": "#FFFFFF",
   "usingComponents": {
-    "tab-bar": "../../components/TabBar"
+    "tab-bar": "../../components/TabBar",
+    "user-avatar": "../../components/UserAvatar"
   }
 }

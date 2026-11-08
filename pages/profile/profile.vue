@@ -5,8 +5,7 @@
       <view class="hero-bg"></view>
       <view class="hero-inner" @click="onHeroTap">
         <view class="avatar-ring">
-          <image class="avatar-img" v-if="avatar" :src="avatar" mode="aspectFill" @error="onAvatarError"></image>
-          <image class="avatar" v-else src="/static/icons/avatar-default.png" mode="aspectFit" />
+          <UserAvatar :src="avatar" :name="displayName" :size="108" />
         </view>
         <view class="hero-info">
           <text class="hero-name">{{ loggedIn ? (nickname || username || '用户') : '未登录' }}</text>
@@ -115,10 +114,11 @@ import { isLoggedIn, remainingCount, limitHint } from '@/utils/guest.js'
 import { imageUrl } from '@/utils/config.js'
 import { getStatusBarHeight } from '@/utils/wininfo.js'
 import TabBar from '@/components/TabBar.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { api } from '@/utils/api.js'
 
 export default {
-  components: { TabBar },
+  components: { TabBar, UserAvatar },
   data() {
     return {
       statusBarHeight: 0,
@@ -132,6 +132,12 @@ export default {
       isAdmin: false,          // 管理员入口：来自登录返回的 isAdmin
       trend: [],               // 最近 7 天识别次数
       trendTotal: 0
+    }
+  },
+  computed: {
+    // 头像首字：昵称 > 账号
+    displayName() {
+      return this.nickname || this.username || this.account || ''
     }
   },
   onShow() {
@@ -280,11 +286,6 @@ export default {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.avatar {
-  width: 108rpx; height: 108rpx; border-radius: 50%;
-  background: #fff; display: flex; align-items: center; justify-content: center;
-  font-size: 56rpx;
-}
 .hero-info { margin-left: 28rpx; flex: 1; display: flex; flex-direction: column; }
 .hero-name { font-size: 42rpx; font-weight: 800; color: #fff; letter-spacing: 0; }
 .hero-account { font-size: 24rpx; color: rgba(255, 255, 255, 0.85); margin-top: 10rpx; }
@@ -366,7 +367,6 @@ export default {
 .logout-btn:active { background: #FEF2F2; }
 
 /* ============ 游客模式 ============ */
-.avatar-img { width: 100%; height: 100%; border-radius: 50%; }
 .hero-edit { font-size: 24rpx; color: rgba(255,255,255,0.9); margin-left: auto; padding-left: 16rpx; }
 .guest-bar { display: flex; align-items: center; justify-content: space-between; margin: 0 32rpx 32rpx; padding: 32rpx; border-radius: 24rpx; background: linear-gradient(135deg, #f0fdfa, #ccfbf1); border: 2rpx solid #99f6e4; }
 .guest-bar-texts { flex: 1; display: flex; flex-direction: column; }

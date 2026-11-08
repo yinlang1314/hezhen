@@ -10,7 +10,7 @@
         </view>
       </view>
       <view class="top-right" :style="{ marginRight: capsuleInset + 'px' }" @click="goToProfile">
-        <image class="avatar-emoji" src="/static/icons/avatar-default.png" mode="aspectFit" />
+        <UserAvatar :src="userAvatar" :name="userName" :size="64" />
       </view>
     </view>
 
@@ -95,13 +95,18 @@
 
 <script>
 import TabBar from '@/components/TabBar.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import { imageUrl } from '@/utils/config.js'
 import { getStatusBarHeight, getWinInfo } from '@/utils/wininfo.js'
 import { api } from '@/utils/api.js'
 
 export default {
-  components: { TabBar },
+  components: { TabBar, UserAvatar },
   data() {
     return {
+      // 右上角头像：登录用户显示自己的头像/首字，游客显示「禾」
+      userAvatar: '',
+      userName: '',
       statusBarHeight: 0,
       capsuleInset: 0,
       menuVisible: false,
@@ -166,6 +171,17 @@ export default {
   },
 
   methods: {
+    // 登录状态可能变化（登录/退登/改资料），每次显示都刷新
+    refreshAvatar() {
+      try {
+        const info = uni.getStorageSync('userInfo') || {}
+        this.userAvatar = info.avatar ? imageUrl(info.avatar) : ''
+        this.userName = info.nickname || info.username || ''
+      } catch (e) {
+        this.userAvatar = ''
+        this.userName = ''
+      }
+    },
     // 取状态栏高度（自定义导航栏必须避让，否则标题被时间和胶囊盖住）
     initStatusBar() {
       this.statusBarHeight = getStatusBarHeight()

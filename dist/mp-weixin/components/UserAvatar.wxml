@@ -1,0 +1,1 @@
+<view class="ua data-v-412a720d" style="{{'width:' + f + ';' + ('height:' + g)}}"><image wx:if="{{a}}" class="ua-img data-v-412a720d" src="{{b}}" mode="aspectFill" binderror="{{c}}"></image><text wx:else class="ua-txt data-v-412a720d" style="{{'font-size:' + e}}">{{d}}</text></view>
