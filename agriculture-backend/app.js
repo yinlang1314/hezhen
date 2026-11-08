@@ -227,7 +227,9 @@ app.get('/api/stats/summary', optionalAuth, async (req, res) => {
   try {
     const { dbGet, dbAll } = require('./config/db')
     const [diseases, histories, users, collections] = await Promise.all([
-      dbGet('SELECT COUNT(*) as cnt FROM diseases'),
+      // 只统计「已核实」——数 App 里真正能点开的条目。
+      // 用总数会让首页显示 249，而百科页只有 24 条（未核实的草稿不该算进去）。
+      dbGet('SELECT COUNT(*) as cnt FROM diseases WHERE verified = 1'),
       dbGet('SELECT COUNT(*) as cnt FROM histories'),
       dbGet('SELECT COUNT(*) as cnt FROM users'),
       dbGet('SELECT COUNT(*) as cnt FROM collections')
