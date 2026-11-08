@@ -1,0 +1,71 @@
+/* ==================================================================
+   用户协议 / 隐私政策 共用版式
+   风格与 App 其它页面一致：浅灰底 + 白卡片 + 深青强调
+   ================================================================== */
+
+.legal-page { display: flex; flex-direction: column; height: 100vh; background: var(--bg-page, #F5F7FA); }
+.legal-scroll { flex: 1; }
+.legal-body { padding: 24rpx 28rpx 64rpx; }
+
+/* 顶部标题区 */
+.legal-hero {
+  background: #fff;
+  border: 1rpx solid var(--line, #E2E8F0);
+  border-radius: 16rpx;
+  padding: 32rpx 28rpx 28rpx;
+  margin-bottom: 20rpx;
+}
+.legal-title { display: block; font-size: 40rpx; font-weight: 700; color: var(--t-strong, #0F172A); letter-spacing: 1rpx; }
+.legal-sub { display: block; margin-top: 10rpx; font-size: 24rpx; color: var(--t-faint, #94A3B8); line-height: 1.6; }
+.legal-meta { display: flex; flex-wrap: wrap; gap: 12rpx; margin-top: 20rpx; }
+.legal-chip {
+  font-size: 21rpx; line-height: 1; padding: 10rpx 16rpx; border-radius: 8rpx;
+  background: var(--c-primary-mist, #F0FDFA); color: var(--c-primary, #0F766E);
+}
+
+/* 章节卡片 */
+.legal-sec {
+  background: #fff;
+  border: 1rpx solid var(--line, #E2E8F0);
+  border-radius: 16rpx;
+  padding: 26rpx 28rpx;
+  margin-bottom: 16rpx;
+}
+.legal-sec-head { display: flex; align-items: center; margin-bottom: 14rpx; }
+.legal-no {
+  flex-shrink: 0;
+  width: 44rpx; height: 44rpx; line-height: 44rpx; text-align: center;
+  border-radius: 10rpx; margin-right: 14rpx;
+  background: var(--c-primary, #0F766E); color: #fff;
+  font-size: 21rpx; font-weight: 700;
+}
+.legal-h { flex: 1; font-size: 29rpx; font-weight: 700; color: var(--t-strong, #0F172A); line-height: 1.4; }
+.legal-p { display: block; font-size: 25rpx; line-height: 1.85; color: var(--t-main, #334155); }
+.legal-p + .legal-p { margin-top: 10rpx; }
+.legal-p.em { color: #B45309; font-weight: 600; }
+
+/* 重点提示块（协议里的“重要”条目） */
+.legal-tip {
+  margin-top: 14rpx;
+  padding: 18rpx 20rpx;
+  border-radius: 10rpx;
+  background: #FFFBEB;
+  border-left: 6rpx solid #D97706;
+}
+.legal-tip .legal-p { color: #92400E; }
+
+/* 联系方式卡片 */
+.legal-contact {
+  background: var(--c-primary-mist, #F0FDFA);
+  border: 1rpx solid #CCFBF1;
+  border-radius: 16rpx;
+  padding: 26rpx 28rpx;
+  margin-top: 4rpx;
+}
+.legal-contact-h { display: block; font-size: 26rpx; font-weight: 700; color: var(--c-primary-deep, #134E4A); margin-bottom: 10rpx; }
+.legal-contact-p { display: block; font-size: 24rpx; line-height: 1.8; color: #115E59; word-break: break-all; }
+
+.legal-foot {
+  display: block; margin-top: 28rpx; text-align: center;
+  font-size: 21rpx; color: #B6C2CF; letter-spacing: 1rpx;
+}
