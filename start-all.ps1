@@ -166,4 +166,26 @@ if ($h5Url) { Write-Host ('  前端网页  ' + $h5Url) }
 else { Write-Host '  前端网页  未启动（见上方提示）' -ForegroundColor DarkYellow }
 Write-Host '  后端接口  http://localhost:3000/api/health'
 Write-Host '  管理后台  http://localhost:3000/admin'
-Write-Host '  手机访问  用上面的端口 + 本机局域网 IP（需与手机同一 Wi-Fi）'
+
+# 手机访问：优先取 WLAN / 以太网 的 IPv4（跳过 VMware、Radmin 这类虚拟网卡）
+$lanIp = $null
+try {
+  $cands = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object { $_.IPAddress -notmatch '^(127\.|169\.254\.)' -and $_.InterfaceAlias -notmatch 'VMware|VMnet|Radmin|Loopback|Bluetooth' }
+  # 家里/学校最常见的 192.168 / 10. / 172.16-31
+  $lanIp = ($cands | Where-Object { $_.IPAddress -match '^(192\.168\.|10\.)' } | Select-Object -First 1 -ExpandProperty IPAddress)
+  if (-not $lanIp) { $lanIp = ($cands | Select-Object -First 1 -ExpandProperty IPAddress) }
+} catch {}
+if ($lanIp) {
+  $h5Port = '5173'
+  if ($h5Url -match ':(\d+)') { $h5Port = $Matches[1] }
+  Write-Host ''
+  Write-Host '手机 / 平板（同一 Wi-Fi）直接开:' -ForegroundColor Cyan
+  Write-Host ('  网页版    http://' + $lanIp + ':' + $h5Port) -ForegroundColor Green
+  Write-Host ('  管理后台  http://' + $lanIp + ':3000/admin') -ForegroundColor Green
+  Write-Host '  提示：手机连不上通常是 Windows 防火墙拦了 3000/5173，管理员 PowerShell 里执行一次：' -ForegroundColor DarkGray
+  Write-Host '  New-NetFirewallRule -DisplayName "Hezhen 3000" -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow' -ForegroundColor DarkGray
+} else {
+  Write-Host '  手机访问  用「ipconfig」查本机局域网 IP，端口用上面的 5173 / 3000' -ForegroundColor Yellow
+}
+Write-Host '  注意：手机和电脑必须在同一个 Wi-Fi；手机用 5G 流量连不上局域网地址' -ForegroundColor DarkGray

@@ -49,12 +49,14 @@
         <text class="auth-btn-text">{{ loading ? '登录中...' : '登 录' }}</text>
       </view>
 
-      <text class="agree-note">
-        登录即表示同意
-        <text class="agree-link" @click.stop="openDoc('agreement')">《用户协议》</text>
-        与
-        <text class="agree-link" @click.stop="openDoc('privacy')">《隐私政策》</text>
-      </text>
+      <view class="agree-row" @click="agreed = !agreed">
+        <view class="agree-box" :class="{ checked: agreed }">{{ agreed ? '✓' : '' }}</view>
+        <text class="agree-text">我已阅读并同意
+          <text class="agree-link" @click.stop="openDoc('agreement')">《用户协议》</text>
+          与
+          <text class="agree-link" @click.stop="openDoc('privacy')">《隐私政策》</text>
+        </text>
+      </view>
 
       <!-- #ifdef MP-WEIXIN -->
       <view class="wx-btn" @click="loginByWechat">
@@ -68,6 +70,19 @@
         <text class="foot-text">还没有账号？</text>
         <text class="foot-link" @click="goRegister">立即注册</text>
       </view>
+
+      <!-- 后端地址：换电脑/换网络连不上时，不用登录也能改 -->
+      <view class="srv-link" @click="showServer = !showServer">
+        服务器：{{ serverShort }} · {{ showServer ? '收起' : '修改' }}
+      </view>
+      <view class="srv-form" v-if="showServer">
+        <input class="srv-input" v-model="serverInput" placeholder="例如 http://192.168.1.5:3000" />
+        <view class="srv-row">
+          <view class="srv-btn ghost" @click="resetServer">恢复默认</view>
+          <view class="srv-btn" @click="saveServer">{{ savingServer ? '测试中…' : '保存并测试' }}</view>
+        </view>
+        <text class="srv-tip">填后端电脑的局域网地址（带 :3000）。电脑 IP 变了就要改这里。</text>
+      </view>
     </view>
 
     <text class="copyright">禾诊 · 智能病虫害识别系统 · 2026</text>
@@ -76,20 +91,48 @@
 
 <script>
 import { api } from '@/utils/api.js'
+import { currentBackendUrl, setBackendUrl } from '@/utils/config.js'
 
 export default {
   data() {
     return {
-      wxLoading: false, 
-      username: "", 
+      wxLoading: false,
+      username: "",
       password: "",
-      loading: false
+      loading: false,
+      agreed: false,
+      showServer: false,
+      serverInput: "",
+      serverUrl: "",
+      savingServer: false
     }
   },
+  computed: {
+    // 底部只显示主机+端口，太长会换行
+    serverShort() {
+      return this.readableServer(this.serverUrl).replace(/^https?:\/\//, '')
+    }
+  },
+  onLoad() {
+    this.serverUrl = this.readableServer(currentBackendUrl())
+    this.serverInput = this.serverUrl
+  },
   methods: {
+    // H5 里页面跑在 5173/5178，后端在 3000；别把前端端口当后端地址显示
+    readableServer(raw) {
+      let u = String(raw || '')
+      // #ifdef H5
+      u = u.replace(/:(5173|5178|80)(\/?)$/, ':3000')
+      // #endif
+      return u
+    },
+
     // 微信小程序一键登录
     loginByWechat() {
       if (this.wxLoading) return
+      if (!this.agreed) {
+        return uni.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' })
+      }
       this.wxLoading = true
       uni.login({
         provider: 'weixin',
@@ -120,6 +163,47 @@ export default {
     },
 
 
+    // 保存后端地址：先测试 /api/health，再写入 storage
+    async saveServer() {
+      if (this.savingServer) return
+      const url = String(this.serverInput || '').trim().replace(/\/+$/, '')
+      if (url && !/^https?:\/\/[^/]+/i.test(url)) {
+        return uni.showToast({ title: '地址要以 http:// 或 https:// 开头', icon: 'none' })
+      }
+      this.savingServer = true
+      try {
+        const finalUrl = setBackendUrl(url)
+        this.serverUrl = finalUrl
+        this.serverInput = finalUrl
+        const ok = await new Promise((resolve) => {
+          uni.request({
+            url: finalUrl + '/api/health',
+            method: 'GET',
+            timeout: 6000,
+            success: (res) => resolve(res.statusCode === 200),
+            fail: () => resolve(false)
+          })
+        })
+        this.showServer = false
+        uni.showToast({
+          title: ok ? '已保存，连接正常' : '已保存，但连不上后端',
+          icon: ok ? 'success' : 'none'
+        })
+      } catch (e) {
+        uni.showToast({ title: e.message || '保存失败', icon: 'none' })
+      } finally {
+        this.savingServer = false
+      }
+    },
+
+    resetServer() {
+      const def = setBackendUrl('')
+      this.serverUrl = def
+      this.serverInput = def
+      this.showServer = false
+      uni.showToast({ title: '已恢复默认地址', icon: 'none' })
+    },
+
     // 打开用户协议 / 隐私政策
     openDoc(kind) {
       uni.navigateTo({
@@ -130,6 +214,9 @@ export default {
 
     async login() {
       if (this.loading) return
+      if (!this.agreed) {
+        return uni.showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' })
+      }
       
       const username = this.username.trim()
       const password = this.password.trim()
