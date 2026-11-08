@@ -107,6 +107,7 @@ export default {
       // 右上角头像：登录用户显示自己的头像/首字，游客显示「禾」
       userAvatar: '',
       userName: '',
+      loggedIn: false,
       statusBarHeight: 0,
       capsuleInset: 0,
       menuVisible: false,
@@ -132,6 +133,7 @@ export default {
   },
   onLoad() {
     this.initStatusBar()
+    this.refreshAvatar()
         const now = new Date()
     const h = now.getHours()
     this.greeting = h < 6 ? '凌晨好' : h < 12 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : '晚上好'
@@ -139,6 +141,11 @@ export default {
     this.dateText = `${now.getMonth() + 1}月${now.getDate()}日 星期${week}`
     this.loadStats()
     this.loadTopWarning()
+  },
+  // 从登录页/个人中心返回时，登录态和统计可能变了
+  onShow() {
+    this.refreshAvatar()
+    this.loadStats()
   },
   computed: {
     // 面板说明：把预警的地区/范围讲清楚
@@ -165,7 +172,8 @@ export default {
         { value: this.warningList.length, label: '全部预警' },
         { value: hi, label: '高风险' },
         { value: this.welcomeStats.disease || 0, label: '病害百科' },
-        { value: this.welcomeStats.history || 0, label: '识别记录' }
+        // 游客看的是所有用户的累计数，标签必须写清楚，不能让人以为是自己的
+        { value: this.welcomeStats.history || 0, label: this.loggedIn ? '识别记录' : '累计识别' }
       ]
     }
   },
@@ -174,6 +182,7 @@ export default {
     // 登录状态可能变化（登录/退登/改资料），每次显示都刷新
     refreshAvatar() {
       try {
+        this.loggedIn = !!uni.getStorageSync('token')
         const info = uni.getStorageSync('userInfo') || {}
         this.userAvatar = info.avatar ? imageUrl(info.avatar) : ''
         this.userName = info.nickname || info.username || ''
@@ -239,7 +248,10 @@ export default {
         this.statList = [
           { value: disease ? disease + '+' : '—', label: '病害库' },
           { value: 'AI', label: '智能诊断' },
-          { value: Number.isFinite(mine) ? String(mine) : String(Number(d.historyCount) || 0), label: '识别记录' }
+          {
+            value: Number.isFinite(mine) ? String(mine) : String(Number(d.historyCount) || 0),
+            label: this.loggedIn ? '识别记录' : '累计识别'
+          }
         ]
       } catch (e) {
         // 接口不可用就保留占位符，不显示假数字
