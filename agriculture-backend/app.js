@@ -331,6 +331,12 @@ app.use('/uploads', async (req, res, next) => {
 
     const filePath = path.join(__dirname, 'public', 'uploads', rel)
 
+    // 文件不存在时 sendFile 会抛 ENOENT → 变成 500。数据库里可能残留已删除图片的记录
+    // （比如用户换过头像、图片被清理），这种情况应该是 404，不是服务端错误。
+    if (!require('fs').existsSync(filePath)) {
+      return res.status(404).json({ code: 404, message: '图片不存在或已删除' })
+    }
+
     // 读 token（header 或 query）
     const raw = req.header('Authorization') || req.header('token') || req.query.token || ''
     const token = String(raw).replace(/^Bearer\s+/i, '').trim()

@@ -101,7 +101,7 @@ exports.login = async (req, res) => {
           id: user.id,
           username: user.username,
           nickname: user.nickname || '',
-          avatar: user.avatar || '',
+          avatar: safeAvatar(user.avatar),
           isAdmin: !!user.is_admin
         }
       }
@@ -109,6 +109,22 @@ exports.login = async (req, res) => {
   } catch (error) {
     console.error('登录失败:', error)
     res.json({ code: 500, message: '登录失败' })
+  }
+}
+
+// 头像地址的兜底：数据库里可能存着已被删除的图片（换过头像、清理过 uploads），
+// 直接返回会让前端一直请求 404。文件不存在时返回空串，前端显示默认头像。
+function safeAvatar(avatar) {
+  const v = String(avatar || '').trim()
+  if (!v) return ''
+  if (v.indexOf('/uploads/') !== 0) return v
+  try {
+    const rel = v.slice('/uploads/'.length).replace(/^\/+/, '')
+    if (!rel || rel.indexOf('..') >= 0) return ''
+    const file = require('path').join(__dirname, '..', 'public', 'uploads', rel)
+    return require('fs').existsSync(file) ? v : ''
+  } catch (e) {
+    return v
   }
 }
 
@@ -180,7 +196,7 @@ exports.wxLogin = async (req, res) => {
           id: user.id,
           username: user.username,
           nickname: user.nickname || '',
-          avatar: user.avatar || '',
+          avatar: safeAvatar(user.avatar),
           isAdmin: !!user.is_admin
         }
       }
@@ -200,7 +216,7 @@ exports.getUserInfo = async (req, res) => {
       id: user.id,
       username: user.username,
       nickname: user.nickname || '',
-      avatar: user.avatar || '',
+      avatar: safeAvatar(user.avatar),
       isAdmin: !!user.is_admin,
       create_time: user.create_time,
       // 从未改过密码时，前端可提示“建议修改密码”
@@ -243,7 +259,11 @@ exports.changePassword = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const nickname = String(req.body.nickname || '').trim().slice(0, 20)
-    const avatar = String(req.body.avatar || '').trim().slice(0, 500)
+    // 头像地址清洗：前端展示时会拼 ?token=xxx 做鉴权，保存时必须去掉，
+    // 否则数据库里会存成 "/uploads/x.png?token=..."，以后永远加载失败。
+    let avatar = String(req.body.avatar || '').trim().slice(0, 500)
+    avatar = avatar.split('#')[0].split('?')[0].replace(/^https?:\/\/[^/]+/i, '')
+    if (avatar && avatar.indexOf('/uploads/') !== 0 && !/^https?:\/\//i.test(avatar)) avatar = ''
 
     // 昵称允许留空（表示恢复默认，用账号名显示）
     if (nickname && nickname.length < 1) {
@@ -256,7 +276,7 @@ exports.updateProfile = async (req, res) => {
       id: user.id,
       username: user.username,
       nickname: user.nickname || '',
-      avatar: user.avatar || '',
+      avatar: safeAvatar(user.avatar),
       isAdmin: !!user.is_admin,
       pwdChanged: !!user.pwd_changed_at
     } })

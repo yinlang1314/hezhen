@@ -137,7 +137,10 @@ export default {
 
       try {
         // 头像若还是本地临时路径，就不要写到后端（后端只接受服务器地址）
-        const avatarForServer = /^https?:|^\/uploads\//.test(this.avatarUrl) ? this.avatarUrl.replace(/^https?:\/\/[^/]+/, '') : ''
+        // 去掉 origin 和 ?token（展示用地址带 token，存进数据库会坏掉）
+        const avatarForServer = /^https?:|^\/uploads\//.test(this.avatarUrl)
+          ? this.avatarUrl.replace(/^https?:\/\/[^/]+/, '').split('?')[0].split('#')[0]
+          : ''
         await api.updateProfile({ nickname, avatar: avatarForServer })
 
         // 同步更新本地缓存的用户信息，个人中心立即生效

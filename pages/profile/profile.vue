@@ -5,7 +5,7 @@
       <view class="hero-bg"></view>
       <view class="hero-inner" @click="onHeroTap">
         <view class="avatar-ring">
-          <image class="avatar-img" v-if="avatar" :src="avatar" mode="aspectFill"></image>
+          <image class="avatar-img" v-if="avatar" :src="avatar" mode="aspectFill" @error="onAvatarError"></image>
           <image class="avatar" v-else src="/static/icons/avatar-default.png" mode="aspectFit" />
         </view>
         <view class="hero-info">
@@ -144,6 +144,11 @@ export default {
       this.loadStats()
   },
   methods: {
+    // 头像文件可能已被删除（历史数据），加载失败就回落到默认头像，别显示破图
+    onAvatarError() {
+      this.avatar = ''
+    },
+
     async loadUserInfo() {
       const userInfo = uni.getStorageSync('userInfo')
       if (userInfo?.username) {
